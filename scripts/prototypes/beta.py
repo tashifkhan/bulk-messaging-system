@@ -40,23 +40,24 @@ def filter_and_send(file_path, message, filter_criteria):
         pywhatkit.sendwhatmsg_instantly(number, message)
 
 
-# Example usage:
-file_path = "contacts.csv"
-message = "Hello from the WhatsApp Messaging System!"
-time_hour = 10
-time_minute = 30
+if __name__ == "__main__":
+    # Example usage:
+    file_path = "contacts.csv"
+    message = "Hello from the WhatsApp Messaging System!"
+    time_hour = 10
+    time_minute = 30
 
-'''
-before running this code, open whatsapp web in your browser and you have to be logged in 
-otherwise it will not work
-'''
+    '''
+    before running this code, open whatsapp web in your browser and you have to be logged in 
+    otherwise it will not work
+    '''
 
-# testing
-send_messages_to_all(file_path, message)
-# schedule_message(file_path, message, time_hour, time_minute)
-# filter_and_send(file_path, message, lambda row: row[1] == "Country")  # Example filter
+    # testing
+    send_messages_to_all(file_path, message)
+    # schedule_message(file_path, message, time_hour, time_minute)
+    # filter_and_send(file_path, message, lambda row: row[1] == "Country")  # Example filter
 
-# Keep the program running for scheduled tasks
-while True:
-    schedule.run_pending()
-    time.sleep(1)
+    # Keep the program running for scheduled tasks
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
