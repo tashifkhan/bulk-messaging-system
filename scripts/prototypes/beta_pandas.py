@@ -20,7 +20,7 @@ def filter_and_send(df, message, filter_criteria):
         pywhatkit.sendwhatmsg_instantly(number, message)
 
 # Example usage:
-file_path = "contacts.csv"
+file_path = "../contacts.csv"
 message = "Hello from the WhatsApp Messaging System!"
 time_hour = 10
 time_minute = 30
