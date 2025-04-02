@@ -3,10 +3,12 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm.attributes import flag_modified
 from datetime import datetime
 from werkzeug.utils import secure_filename
+from flask_cors import CORS  # Add this import
 
 import os
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///database.db"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
@@ -184,6 +186,121 @@ def load_table(username):
                 return render_template('buttons.html', table=table)
             except:
                 pass
+
+# Add new API endpoints for React frontend
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    data = request.json
+    username = data.get('email')
+    login_password = data.get('password')
+    
+    user = User.query.filter_by(username=username).first()
+    
+    if user and user.login_password == login_password:
+        return jsonify({
+            'username': user.username,
+            'name': user.name,
+            'tables': user.tables
+        })
+    else:
+        return jsonify({'error': 'Invalid username or password'}), 401
+
+@app.route('/api/signup', methods=['POST'])
+def api_signup():
+    data = request.json
+    name = data.get('name')
+    username = data.get('email')
+    login_password = data.get('password')
+    
+    existing_user = User.query.filter_by(username=username).first()
+    
+    if existing_user:
+        return jsonify({'error': 'Email already exists'}), 409
+    
+    user = User(username=username, name=name, login_password=login_password, tables={})
+    db.session.add(user)
+    db.session.commit()
+    
+    return jsonify({'message': 'Account created successfully'})
+
+@app.route('/api/tables/<username>/load_data', methods=['GET'])
+def api_load_data(username):
+    user = User.query.filter_by(username=username).first()
+    
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
+    return jsonify({'tables': user.tables})
+
+@app.route('/api/upload/<username>', methods=['POST'])
+def api_upload(username):
+    ALLOWED_EXTENSIONS = {'csv', 'xlsx', 'xls'}
+    def allowed_file(filename):
+        return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    
+    user = User.query.filter_by(username=username).first()
+    
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+    
+    file = request.files['file']
+    
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+    
+    if not allowed_file(file.filename):
+        return jsonify({'error': 'File type not supported'}), 400
+    
+    filename = f"{username}_{secure_filename(file.filename)}"
+    len_json = len(user.tables)
+    user.tables[str(len_json)] = filename
+    file.save(os.path.join('uploads/', filename))
+    flag_modified(user, 'tables')
+    db.session.commit()
+    
+    return jsonify({'message': 'File uploaded successfully', 'filename': filename})
+
+@app.route('/api/create_table/<username>', methods=['POST'])
+def api_create_table(username):
+    data = request.json
+    table_name = data.get('tableName')
+    
+    user = User.query.filter_by(username=username).first()
+    
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
+    if table_name in user.tables.values():
+        return jsonify({'error': 'Table already exists'}), 409
+    
+    len_json = len(user.tables)
+    user.tables[str(len_json)] = table_name
+    flag_modified(user, 'tables')
+    db.session.commit()
+    
+    return jsonify({'message': 'Table created successfully', 'table_name': table_name})
+
+@app.route('/api/tables/<username>', methods=['POST'])
+def api_select_table(username):
+    data = request.json
+    selected_table = data.get('table')
+    
+    user = User.query.filter_by(username=username).first()
+    
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
+    if selected_table not in user.tables.values():
+        return jsonify({'error': 'Table not found'}), 404
+    
+    # Here you can implement any functionality needed when a table is selected
+    
+    return jsonify({'message': 'Table selected successfully', 'table': selected_table})
+
+# Keep the existing routes for the old UI
 
 if __name__ == '__main__':
     app.run(debug=True)
