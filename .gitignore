@@ -8,3 +8,5 @@ instance/
 *.db
 test.py
 test2.py
+.fleet
+.vscode
