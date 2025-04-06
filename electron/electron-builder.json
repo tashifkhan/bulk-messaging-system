@@ -1,0 +1,16 @@
+{
+	"appId": "codes.tashif.whatsapp-bulk-messenger",
+	"files": ["dist-electron", "dist-react"],
+	"extraResources": ["src/electron/preload.cjs", "src/assets/**"],
+	"icon": "./desktopIcon.icns",
+	"mac": {
+		"target": "dmg"
+	},
+	"linux": {
+		"target": "AppImage",
+		"category": "Utility"
+	},
+	"win": {
+		"target": ["portable", "msi"]
+	}
+}
