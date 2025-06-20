@@ -32,7 +32,10 @@ function createWindow() {
         mainWindow.loadURL('http://localhost:5173');
         mainWindow.webContents.openDevTools();
     } else {
-        mainWindow.loadFile(path.join(__dirname, '../../dist-react/index.html'));
+        const distPath = path.join(__dirname, '../../dist-react/index.html');
+        console.log('Loading from dist path:', distPath);
+        console.log('Dist path exists:', fs.existsSync(distPath));
+        mainWindow.loadFile(distPath);
     }
 }
 
