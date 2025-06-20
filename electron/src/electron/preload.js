@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     
     // File operations
     importEmailList: () => ipcRenderer.invoke('import-email-list'),
+    readEmailListFile: (filePath) => ipcRenderer.invoke('read-email-list-file', filePath),
     
     // Progress tracking
     onProgress: (callback) => {

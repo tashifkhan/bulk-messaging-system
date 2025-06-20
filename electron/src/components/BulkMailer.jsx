@@ -78,6 +78,12 @@ export default function BulkMailer() {
 
 	const checkGmailAuth = async () => {
 		try {
+			// Check if electronAPI is available
+			if (!window.electronAPI?.getGmailToken) {
+				console.warn("Gmail token function not available");
+				return;
+			}
+
 			const result = await window.electronAPI.getGmailToken();
 			setIsGmailAuthenticated(result.hasToken);
 		} catch (error) {
@@ -87,6 +93,21 @@ export default function BulkMailer() {
 
 	const authenticateGmail = async () => {
 		try {
+			// Check if electronAPI is available
+			if (!window.electronAPI) {
+				alert(
+					"Electron API not available. Please make sure you're running in Electron environment."
+				);
+				return;
+			}
+
+			if (!window.electronAPI.authenticateGmail) {
+				alert(
+					"Gmail authentication function not available. Please check Electron configuration."
+				);
+				return;
+			}
+
 			const result = await window.electronAPI.authenticateGmail();
 			if (result.success) {
 				setIsGmailAuthenticated(true);
@@ -106,15 +127,40 @@ export default function BulkMailer() {
 
 	const importEmailList = async () => {
 		try {
+			// Check if electronAPI is available
+			if (!window.electronAPI) {
+				alert(
+					"Electron API not available. Please make sure you're running in Electron environment."
+				);
+				return;
+			}
+
+			if (!window.electronAPI.importEmailList) {
+				alert(
+					"Import email list function not available. Please check Electron configuration."
+				);
+				return;
+			}
+
 			const result = await window.electronAPI.importEmailList();
 			if (!result.canceled && result.filePaths.length > 0) {
-				// Read file content (this would need to be implemented in the main process)
-				// For now, show a placeholder
-				alert(
-					"File import selected. File reading functionality needs to be implemented."
+				// Read file content
+				const filePath = result.filePaths[0];
+				const fileContent = await window.electronAPI.readEmailListFile(
+					filePath
 				);
+
+				if (fileContent) {
+					setEmailList(fileContent);
+					alert(
+						`Successfully imported ${
+							fileContent.split("\n").filter((line) => line.trim()).length
+						} email addresses.`
+					);
+				}
 			}
 		} catch (error) {
+			console.error("Import error:", error);
 			alert(`Error importing email list: ${error.message}`);
 		}
 	};
@@ -234,15 +280,62 @@ export default function BulkMailer() {
 	};
 
 	const startWhatsAppClient = async () => {
-		setWaStatus("Initializing WhatsApp client...");
-		setWaQR(null);
-		await window.electronAPI.startWhatsAppClient();
+		try {
+			// Check if electronAPI is available
+			if (!window.electronAPI) {
+				alert(
+					"Electron API not available. Please make sure you're running in Electron environment."
+				);
+				return;
+			}
+
+			if (!window.electronAPI.startWhatsAppClient) {
+				alert(
+					"Start WhatsApp client function not available. Please check Electron configuration."
+				);
+				return;
+			}
+
+			setWaStatus("Initializing WhatsApp client...");
+			setWaQR(null);
+			await window.electronAPI.startWhatsAppClient();
+		} catch (error) {
+			console.error("Error starting WhatsApp client:", error);
+			setWaStatus(`Error: ${error.message}`);
+			alert(`Error starting WhatsApp client: ${error.message}`);
+		}
 	};
 
 	const importWhatsAppContacts = async () => {
-		const contacts = await window.electronAPI.importWhatsAppContacts();
-		if (contacts && Array.isArray(contacts)) {
-			setWaContacts(contacts);
+		try {
+			// Check if electronAPI is available
+			if (!window.electronAPI) {
+				alert(
+					"Electron API not available. Please make sure you're running in Electron environment."
+				);
+				return;
+			}
+
+			if (!window.electronAPI.importWhatsAppContacts) {
+				alert(
+					"Import WhatsApp contacts function not available. Please check Electron configuration."
+				);
+				return;
+			}
+
+			const contacts = await window.electronAPI.importWhatsAppContacts();
+			if (contacts && Array.isArray(contacts)) {
+				setWaContacts(contacts);
+				alert(`Successfully imported ${contacts.length} contacts.`);
+			} else if (contacts === null) {
+				// User cancelled the dialog
+				return;
+			} else {
+				alert("No valid contacts found in the selected file.");
+			}
+		} catch (error) {
+			console.error("Error importing WhatsApp contacts:", error);
+			alert(`Error importing WhatsApp contacts: ${error.message}`);
 		}
 	};
 
@@ -255,19 +348,44 @@ export default function BulkMailer() {
 			alert("Please enter a message");
 			return;
 		}
-		setWaSending(true);
-		setWaResults([]);
-		setWaStatus("Sending...");
-		const result = await window.electronAPI.sendWhatsAppMessages({
-			contacts: waContacts,
-			messageText: waMessage,
-		});
-		setWaSending(false);
-		setWaStatus(
-			result.success
-				? `Done. Sent: ${result.sent}, Failed: ${result.failed}`
-				: result.message
-		);
+
+		try {
+			// Check if electronAPI is available
+			if (!window.electronAPI) {
+				alert(
+					"Electron API not available. Please make sure you're running in Electron environment."
+				);
+				return;
+			}
+
+			if (!window.electronAPI.sendWhatsAppMessages) {
+				alert(
+					"Send WhatsApp messages function not available. Please check Electron configuration."
+				);
+				return;
+			}
+
+			setWaSending(true);
+			setWaResults([]);
+			setWaStatus("Sending...");
+
+			const result = await window.electronAPI.sendWhatsAppMessages({
+				contacts: waContacts,
+				messageText: waMessage,
+			});
+
+			setWaSending(false);
+			setWaStatus(
+				result.success
+					? `Done. Sent: ${result.sent}, Failed: ${result.failed}`
+					: result.message
+			);
+		} catch (error) {
+			console.error("Error sending WhatsApp messages:", error);
+			setWaSending(false);
+			setWaStatus(`Error: ${error.message}`);
+			alert(`Error sending WhatsApp messages: ${error.message}`);
+		}
 	};
 
 	return (

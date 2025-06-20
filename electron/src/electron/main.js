@@ -211,3 +211,45 @@ ipcMain.handle('import-email-list', async () => {
     
     return result;
 });
+
+// Read email list file content
+ipcMain.handle('read-email-list-file', async (event, filePath) => {
+    try {
+        const fileContent = fs.readFileSync(filePath, 'utf8');
+        
+        // Determine file type and parse accordingly
+        if (filePath.endsWith('.csv')) {
+            // Parse CSV file
+            return new Promise((resolve, reject) => {
+                const emails = [];
+                fs.createReadStream(filePath)
+                    .pipe(csv())
+                    .on('data', (row) => {
+                        // Look for common email column names
+                        const email = row.email || row.Email || row.EMAIL || 
+                                     row.address || row.Address || row.ADDRESS ||
+                                     Object.values(row)[0]; // fallback to first column
+                        if (email && email.includes('@')) {
+                            emails.push(email.trim());
+                        }
+                    })
+                    .on('end', () => {
+                        resolve(emails.join('\n'));
+                    })
+                    .on('error', (error) => {
+                        reject(error);
+                    });
+            });
+        } else {
+            // For text files, split by lines and filter valid emails
+            const lines = fileContent.split('\n');
+            const emails = lines
+                .map(line => line.trim())
+                .filter(line => line && line.includes('@'));
+            return emails.join('\n');
+        }
+    } catch (error) {
+        console.error('Error reading email list file:', error);
+        throw error;
+    }
+});
