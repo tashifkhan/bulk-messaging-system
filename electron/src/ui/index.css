@@ -1,26 +1,5 @@
 @import "tailwindcss";
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: 'Whitney', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  line-height: 1.375;
-  color: #dcddde;
-  background: #36393f;
-  overflow-x: hidden;
-  scroll-behavior: smooth;
-}
-
-#root {
-  width: 100%;
-  min-height: 100vh;
-  position: relative;
-}
-
 /* Discord-like scrollbar */
 ::-webkit-scrollbar {
   width: 16px;
@@ -55,7 +34,3 @@ input:focus, textarea:focus, button:focus {
   outline-offset: 0;
 }
 
-/* Smooth transitions */
-* {
-  transition: all 0.15s ease-out;
-}

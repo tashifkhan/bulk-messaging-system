@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
+import WhatsAppForm from "./WhatsAppForm";
 import {
 	GmailIcon,
 	ServerIcon,
@@ -13,7 +14,7 @@ import {
 } from "./Icons";
 
 export default function BulkMailer() {
-	const [activeTab, setActiveTab] = useState("gmail");
+	const [activeTab, setActiveTab] = useState("whatsapp");
 	const [isGmailAuthenticated, setIsGmailAuthenticated] = useState(false);
 	const [emailList, setEmailList] = useState("");
 	const [subject, setSubject] = useState("");
@@ -258,7 +259,363 @@ export default function BulkMailer() {
 			<main className="flex-1 flex flex-col bg-gradient-to-br from-[#36393f] via-[#23272a] to-[#23272a]">
 				<TopBar activeTab={activeTab} />
 				<section className="flex-1 overflow-y-auto p-6 md:p-10 flex flex-col items-center">
-					<div className="w-full max-w-4xl space-y-8"></div>
+					{activeTab === "whatsapp" && (
+						<WhatsAppForm
+							waContacts={waContacts}
+							setWaContacts={setWaContacts}
+							waMessage={waMessage}
+							setWaMessage={setWaMessage}
+							waStatus={waStatus}
+							waQR={waQR}
+							waSending={waSending}
+							waResults={waResults}
+							startWhatsAppClient={startWhatsAppClient}
+							importWhatsAppContacts={importWhatsAppContacts}
+							sendWhatsAppBulk={sendWhatsAppBulk}
+						/>
+					)}
+
+					{activeTab === "gmail" && (
+						<div className="w-full max-w-4xl space-y-6">
+							<div className="flex items-center gap-3 mb-8">
+								<div className="p-3 bg-[#ea4335] rounded-xl">
+									<GmailIcon className="w-8 h-8 text-white" />
+								</div>
+								<div>
+									<h1 className="text-2xl font-bold text-white">
+										Gmail Bulk Sender
+									</h1>
+									<p className="text-gray-400">
+										Send bulk emails using Gmail API
+									</p>
+								</div>
+							</div>
+
+							{/* Gmail Authentication */}
+							<div className="bg-[#2b2d31] rounded-lg p-6 border border-[#3f4248]">
+								<h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+									<div className="w-2 h-2 bg-[#ea4335] rounded-full"></div>
+									Gmail Authentication
+								</h2>
+
+								<div className="flex items-center gap-4">
+									{isGmailAuthenticated ? (
+										<div className="flex items-center gap-2 text-green-400">
+											<CheckIcon className="w-5 h-5" />
+											<span className="font-medium">Gmail Authenticated</span>
+										</div>
+									) : (
+										<div className="flex items-center gap-2 text-yellow-400">
+											<LockIcon className="w-5 h-5" />
+											<span className="font-medium">Not Authenticated</span>
+										</div>
+									)}
+								</div>
+							</div>
+
+							{/* Email Configuration */}
+							<div className="bg-[#2b2d31] rounded-lg p-6 border border-[#3f4248]">
+								<h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+									<div className="w-2 h-2 bg-[#23a55a] rounded-full"></div>
+									Email Configuration
+								</h2>
+
+								<div className="space-y-4">
+									<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+										<button
+											onClick={importEmailList}
+											className="flex items-center gap-2 px-4 py-2 bg-[#5865f2] hover:bg-[#4752c4] text-white font-medium rounded-md transition-colors"
+										>
+											<FolderIcon className="w-4 h-4" />
+											Import Email List
+										</button>
+										<div className="bg-[#313338] rounded-md p-3 border border-[#3f4248]">
+											<span className="text-gray-400 text-sm">Recipients:</span>
+											<p className="text-white font-medium">
+												{
+													emailList.split("\n").filter((email) => email.trim())
+														.length
+												}
+											</p>
+										</div>
+									</div>
+
+									<div>
+										<label className="block text-gray-300 text-sm font-medium mb-2">
+											Email Recipients (one per line)
+										</label>
+										<textarea
+											value={emailList}
+											onChange={(e) => setEmailList(e.target.value)}
+											placeholder="email1@example.com&#10;email2@example.com&#10;email3@example.com"
+											className="w-full h-32 px-3 py-2 bg-[#313338] border border-[#3f4248] rounded-md text-white placeholder-gray-500 focus:outline-none focus:border-[#5865f2] focus:ring-1 focus:ring-[#5865f2] resize-none"
+										/>
+									</div>
+
+									<div>
+										<label className="block text-gray-300 text-sm font-medium mb-2">
+											Subject
+										</label>
+										<input
+											type="text"
+											value={subject}
+											onChange={(e) => setSubject(e.target.value)}
+											placeholder="Enter email subject"
+											className="w-full px-3 py-2 bg-[#313338] border border-[#3f4248] rounded-md text-white placeholder-gray-500 focus:outline-none focus:border-[#5865f2] focus:ring-1 focus:ring-[#5865f2]"
+										/>
+									</div>
+
+									<div>
+										<label className="block text-gray-300 text-sm font-medium mb-2">
+											Message
+										</label>
+										<textarea
+											value={message}
+											onChange={(e) => setMessage(e.target.value)}
+											placeholder="Enter your email message..."
+											className="w-full h-32 px-3 py-2 bg-[#313338] border border-[#3f4248] rounded-md text-white placeholder-gray-500 focus:outline-none focus:border-[#5865f2] focus:ring-1 focus:ring-[#5865f2] resize-none"
+										/>
+									</div>
+
+									<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+										<div>
+											<label className="block text-gray-300 text-sm font-medium mb-2">
+												Delay (ms)
+											</label>
+											<input
+												type="number"
+												value={delay}
+												onChange={(e) => setDelay(e.target.value)}
+												min="1000"
+												className="w-full px-3 py-2 bg-[#313338] border border-[#3f4248] rounded-md text-white focus:outline-none focus:border-[#5865f2] focus:ring-1 focus:ring-[#5865f2]"
+											/>
+										</div>
+										<button
+											onClick={sendGmailBulk}
+											disabled={isSending || !isGmailAuthenticated}
+											className="flex items-center justify-center gap-2 px-6 py-2 bg-[#ea4335] hover:bg-[#d23125] disabled:bg-[#3f4248] disabled:text-gray-500 text-white font-medium rounded-md transition-colors"
+										>
+											{isSending ? (
+												<>
+													<div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+													Sending...
+												</>
+											) : (
+												<>
+													<SendIcon className="w-4 h-4" />
+													Send Bulk Email
+												</>
+											)}
+										</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					)}
+
+					{activeTab === "smtp" && (
+						<div className="w-full max-w-4xl space-y-6">
+							<div className="flex items-center gap-3 mb-8">
+								<div className="p-3 bg-[#5865f2] rounded-xl">
+									<ServerIcon className="w-8 h-8 text-white" />
+								</div>
+								<div>
+									<h1 className="text-2xl font-bold text-white">
+										SMTP Bulk Sender
+									</h1>
+									<p className="text-gray-400">
+										Send bulk emails using SMTP configuration
+									</p>
+								</div>
+							</div>
+
+							{/* SMTP Configuration */}
+							<div className="bg-[#2b2d31] rounded-lg p-6 border border-[#3f4248]">
+								<h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+									<div className="w-2 h-2 bg-[#5865f2] rounded-full"></div>
+									SMTP Configuration
+								</h2>
+
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+									<div>
+										<label className="block text-gray-300 text-sm font-medium mb-2">
+											Host
+										</label>
+										<input
+											type="text"
+											value={smtpConfig.host}
+											onChange={(e) =>
+												setSMTPConfig({ ...smtpConfig, host: e.target.value })
+											}
+											placeholder="smtp.gmail.com"
+											className="w-full px-3 py-2 bg-[#313338] border border-[#3f4248] rounded-md text-white placeholder-gray-500 focus:outline-none focus:border-[#5865f2] focus:ring-1 focus:ring-[#5865f2]"
+										/>
+									</div>
+									<div>
+										<label className="block text-gray-300 text-sm font-medium mb-2">
+											Port
+										</label>
+										<input
+											type="number"
+											value={smtpConfig.port}
+											onChange={(e) =>
+												setSMTPConfig({
+													...smtpConfig,
+													port: parseInt(e.target.value),
+												})
+											}
+											className="w-full px-3 py-2 bg-[#313338] border border-[#3f4248] rounded-md text-white focus:outline-none focus:border-[#5865f2] focus:ring-1 focus:ring-[#5865f2]"
+										/>
+									</div>
+									<div>
+										<label className="block text-gray-300 text-sm font-medium mb-2">
+											Username
+										</label>
+										<input
+											type="text"
+											value={smtpConfig.user}
+											onChange={(e) =>
+												setSMTPConfig({ ...smtpConfig, user: e.target.value })
+											}
+											placeholder="your@email.com"
+											className="w-full px-3 py-2 bg-[#313338] border border-[#3f4248] rounded-md text-white placeholder-gray-500 focus:outline-none focus:border-[#5865f2] focus:ring-1 focus:ring-[#5865f2]"
+										/>
+									</div>
+									<div>
+										<label className="block text-gray-300 text-sm font-medium mb-2">
+											Password
+										</label>
+										<input
+											type="password"
+											value={smtpConfig.pass}
+											onChange={(e) =>
+												setSMTPConfig({ ...smtpConfig, pass: e.target.value })
+											}
+											placeholder="your-password"
+											className="w-full px-3 py-2 bg-[#313338] border border-[#3f4248] rounded-md text-white placeholder-gray-500 focus:outline-none focus:border-[#5865f2] focus:ring-1 focus:ring-[#5865f2]"
+										/>
+									</div>
+								</div>
+
+								<div className="mt-4">
+									<label className="flex items-center gap-2">
+										<input
+											type="checkbox"
+											checked={smtpConfig.secure}
+											onChange={(e) =>
+												setSMTPConfig({
+													...smtpConfig,
+													secure: e.target.checked,
+												})
+											}
+											className="w-4 h-4 text-[#5865f2] bg-[#313338] border-[#3f4248] rounded focus:ring-[#5865f2] focus:ring-2"
+										/>
+										<span className="text-gray-300 text-sm">
+											Use secure connection (SSL/TLS)
+										</span>
+									</label>
+								</div>
+							</div>
+
+							{/* Email Configuration - Same as Gmail but with SMTP send button */}
+							<div className="bg-[#2b2d31] rounded-lg p-6 border border-[#3f4248]">
+								<h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+									<div className="w-2 h-2 bg-[#23a55a] rounded-full"></div>
+									Email Configuration
+								</h2>
+
+								<div className="space-y-4">
+									<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+										<button
+											onClick={importEmailList}
+											className="flex items-center gap-2 px-4 py-2 bg-[#5865f2] hover:bg-[#4752c4] text-white font-medium rounded-md transition-colors"
+										>
+											<FolderIcon className="w-4 h-4" />
+											Import Email List
+										</button>
+										<div className="bg-[#313338] rounded-md p-3 border border-[#3f4248]">
+											<span className="text-gray-400 text-sm">Recipients:</span>
+											<p className="text-white font-medium">
+												{
+													emailList.split("\n").filter((email) => email.trim())
+														.length
+												}
+											</p>
+										</div>
+									</div>
+
+									<div>
+										<label className="block text-gray-300 text-sm font-medium mb-2">
+											Email Recipients (one per line)
+										</label>
+										<textarea
+											value={emailList}
+											onChange={(e) => setEmailList(e.target.value)}
+											placeholder="email1@example.com&#10;email2@example.com&#10;email3@example.com"
+											className="w-full h-32 px-3 py-2 bg-[#313338] border border-[#3f4248] rounded-md text-white placeholder-gray-500 focus:outline-none focus:border-[#5865f2] focus:ring-1 focus:ring-[#5865f2] resize-none"
+										/>
+									</div>
+
+									<div>
+										<label className="block text-gray-300 text-sm font-medium mb-2">
+											Subject
+										</label>
+										<input
+											type="text"
+											value={subject}
+											onChange={(e) => setSubject(e.target.value)}
+											placeholder="Enter email subject"
+											className="w-full px-3 py-2 bg-[#313338] border border-[#3f4248] rounded-md text-white placeholder-gray-500 focus:outline-none focus:border-[#5865f2] focus:ring-1 focus:ring-[#5865f2]"
+										/>
+									</div>
+
+									<div>
+										<label className="block text-gray-300 text-sm font-medium mb-2">
+											Message
+										</label>
+										<textarea
+											value={message}
+											onChange={(e) => setMessage(e.target.value)}
+											placeholder="Enter your email message..."
+											className="w-full h-32 px-3 py-2 bg-[#313338] border border-[#3f4248] rounded-md text-white placeholder-gray-500 focus:outline-none focus:border-[#5865f2] focus:ring-1 focus:ring-[#5865f2] resize-none"
+										/>
+									</div>
+
+									<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+										<div>
+											<label className="block text-gray-300 text-sm font-medium mb-2">
+												Delay (ms)
+											</label>
+											<input
+												type="number"
+												value={delay}
+												onChange={(e) => setDelay(e.target.value)}
+												min="1000"
+												className="w-full px-3 py-2 bg-[#313338] border border-[#3f4248] rounded-md text-white focus:outline-none focus:border-[#5865f2] focus:ring-1 focus:ring-[#5865f2]"
+											/>
+										</div>
+										<button
+											onClick={sendSMTPBulk}
+											disabled={isSending}
+											className="flex items-center justify-center gap-2 px-6 py-2 bg-[#5865f2] hover:bg-[#4752c4] disabled:bg-[#3f4248] disabled:text-gray-500 text-white font-medium rounded-md transition-colors"
+										>
+											{isSending ? (
+												<>
+													<div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+													Sending...
+												</>
+											) : (
+												<>
+													<SendIcon className="w-4 h-4" />
+													Send SMTP Email
+												</>
+											)}
+										</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					)}
 				</section>
 			</main>
 		</div>
