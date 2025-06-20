@@ -18,3 +18,5 @@ test2.py
 
 .DS_Store
 uploads/
+
+venv
