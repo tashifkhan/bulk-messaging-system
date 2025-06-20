@@ -5,17 +5,25 @@ function PyodideComponent() {
 	const [pyodide, setPyodide] = useState(null);
 	const [result, setResult] = useState("");
 	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState(null);
 
 	useEffect(() => {
 		async function load() {
 			try {
+				const indexURL = window.location.origin + "/pyodide/";
+
+				console.log("Loading Pyodide with indexURL:", indexURL);
+
 				const pyodideInstance = await loadPyodide({
-					indexURL: "/pyodide/",
+					indexURL: indexURL,
 				});
+
 				setPyodide(pyodideInstance);
 				setLoading(false);
 			} catch (error) {
 				console.error("Error loading Pyodide:", error);
+				setError(error.message);
+				setLoading(false);
 			}
 		}
 
@@ -36,6 +44,10 @@ function PyodideComponent() {
 
 	if (loading) {
 		return <div>Loading Pyodide...</div>;
+	}
+
+	if (error) {
+		return <div>Error loading Pyodide: {error}</div>;
 	}
 
 	return (
