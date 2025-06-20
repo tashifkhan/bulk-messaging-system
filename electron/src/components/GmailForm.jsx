@@ -19,14 +19,6 @@ export default function GmailForm({
 }) {
 	const [logEntries, setLogEntries] = useState([]);
 
-	const addLogEntry = (message, type = "info") => {
-		const timestamp = new Date().toLocaleTimeString();
-		setLogEntries((prev) => [
-			...prev,
-			{ message, type, timestamp, id: Date.now() },
-		]);
-	};
-
 	const recipientCount = emailList
 		.split("\n")
 		.filter((email) => email.trim()).length;

@@ -4,16 +4,6 @@ import TopBar from "./TopBar";
 import WhatsAppForm from "./WhatsAppForm";
 import GmailForm from "./GmailForm";
 import SMTPForm from "./SMTPForm";
-import {
-	GmailIcon,
-	ServerIcon,
-	MailIcon,
-	FolderIcon,
-	SendIcon,
-	CheckIcon,
-	LockIcon,
-	WhatsAppIcon,
-} from "./Icons";
 import ContactProcessor from "../utils/contactProcessor.browser.js";
 
 export default function BulkMailer() {
@@ -32,12 +22,6 @@ export default function BulkMailer() {
 	});
 	const [isSending, setIsSending] = useState(false);
 
-	// Progress tracking
-	const [progress, setProgress] = useState({
-		current: 0,
-		total: 0,
-		status: "",
-	});
 	const [results, setResults] = useState([]);
 
 	// WhatsApp configuration
