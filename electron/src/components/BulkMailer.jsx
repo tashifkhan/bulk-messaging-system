@@ -14,6 +14,7 @@ import {
 	LockIcon,
 	WhatsAppIcon,
 } from "./Icons";
+import ContactProcessor from "../utils/contactProcessor.browser.js";
 
 export default function BulkMailer() {
 	const [activeTab, setActiveTab] = useState("whatsapp");
@@ -341,11 +342,9 @@ export default function BulkMailer() {
 
 	const importWhatsAppContacts = async () => {
 		try {
-			// Use HTML file input to get file
 			const input = document.createElement("input");
 			input.type = "file";
 			input.accept = ".txt,.csv,.xlsx,.xls";
-
 			return new Promise((resolve) => {
 				input.onchange = async (event) => {
 					const file = event.target.files[0];
@@ -353,51 +352,35 @@ export default function BulkMailer() {
 						resolve();
 						return;
 					}
-
 					try {
-						// Upload file to Python backend
-						const formData = new FormData();
-						formData.append("file", file);
-
-						const response = await fetch("http://localhost:5034/upload", {
-							method: "POST",
-							body: formData,
-						});
-
-						const result = await response.json();
-
-						if (result.success) {
-							setWaContacts(result.contacts);
+						const processor = new ContactProcessor();
+						const ext = file.name.split(".").pop().toLowerCase();
+						let contacts = [];
+						if (ext === "csv") {
+							const text = await file.text();
+							contacts = await processor.extractContactsFromCsvText(text);
+						} else if (ext === "txt") {
+							const text = await file.text();
+							contacts = processor.extractContactsFromTxtText(text);
+						} else if (["xlsx", "xls"].includes(ext)) {
+							const arrayBuffer = await file.arrayBuffer();
+							contacts =
+								processor.extractContactsFromExcelArrayBuffer(arrayBuffer);
+						}
+						if (contacts.length) {
+							setWaContacts(contacts);
 							alert(
-								`Successfully imported ${result.count} contacts from ${file.name}.`
+								`Successfully imported ${contacts.length} contacts from ${file.name}.`
 							);
 						} else {
-							throw new Error(result.error || "Failed to process file");
+							alert("No valid contacts found in file.");
 						}
 					} catch (error) {
 						console.error("Error importing WhatsApp contacts:", error);
 						alert(`Error importing WhatsApp contacts: ${error.message}`);
-
-						// Fallback to Electron file handling if Python backend is not available
-						try {
-							if (window.electronAPI?.importWhatsAppContacts) {
-								const contacts =
-									await window.electronAPI.importWhatsAppContacts();
-								if (contacts && Array.isArray(contacts)) {
-									setWaContacts(contacts);
-									alert(
-										`Successfully imported ${contacts.length} contacts (fallback mode).`
-									);
-								}
-							}
-						} catch (fallbackError) {
-							console.error("Fallback import also failed:", fallbackError);
-						}
 					}
-
 					resolve();
 				};
-
 				input.click();
 			});
 		} catch (error) {

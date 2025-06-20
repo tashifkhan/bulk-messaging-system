@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { WhatsAppIcon, FolderIcon, SendIcon, CheckIcon } from "./Icons";
+import ContactProcessor from "../utils/contactProcessor.browser.js";
 
 export default function WhatsAppForm({
 	waContacts,
@@ -42,23 +43,9 @@ export default function WhatsAppForm({
 			addLogEntry("Please enter some phone numbers", "error");
 			return;
 		}
-
 		try {
-			const response = await fetch(
-				"http://localhost:5034/parse-manual-numbers",
-				{
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-					},
-					body: JSON.stringify({
-						numbers: manualNumbers,
-					}),
-				}
-			);
-
-			const result = await response.json();
-
+			const processor = new ContactProcessor();
+			const result = processor.parseManualNumbers(manualNumbers);
 			if (result.success) {
 				setWaContacts((prevContacts) => [...prevContacts, ...result.contacts]);
 				addLogEntry(`Added ${result.count} contacts manually`, "success");
@@ -71,69 +58,28 @@ export default function WhatsAppForm({
 				);
 			}
 		} catch (error) {
-			addLogEntry(`Error connecting to backend: ${error.message}`, "error");
-			// Fallback to basic parsing if backend is not available
-			fallbackParseNumbers();
+			addLogEntry(`Error processing manual numbers: ${error.message}`, "error");
 		}
 	};
 
-	const fallbackParseNumbers = () => {
-		const lines = manualNumbers.split("\n");
-		const newContacts = [];
-
-		lines.forEach((line) => {
-			line = line.trim();
-			if (line) {
-				// Basic phone number extraction
-				const phoneMatch = line.match(/[\+]?[\d\-\(\)\s]{7,}/);
-				if (phoneMatch) {
-					const phone = phoneMatch[0].replace(/[-\s\(\)]/g, "");
-					const name =
-						line.replace(phoneMatch[0], "").trim() ||
-						`Contact ${waContacts.length + newContacts.length + 1}`;
-					newContacts.push({
-						number: phone,
-						name: name,
-					});
-				}
-			}
-		});
-
-		if (newContacts.length > 0) {
-			setWaContacts((prevContacts) => [...prevContacts, ...newContacts]);
-			addLogEntry(
-				`Added ${newContacts.length} contacts manually (fallback mode)`,
-				"success"
-			);
-			setManualNumbers("");
-			setShowManualInput(false);
-		} else {
-			addLogEntry("No valid phone numbers found", "error");
-		}
-	};
-
-	const uploadFileToBackend = async (file) => {
-		const formData = new FormData();
-		formData.append("file", file);
-
+	const uploadFileToProcessor = async (file) => {
 		try {
-			const response = await fetch("http://localhost:5034/upload", {
-				method: "POST",
-				body: formData,
-			});
-
-			const result = await response.json();
-
-			if (result.success) {
-				setWaContacts(result.contacts);
-				addLogEntry(`Imported ${result.count} contacts from file`, "success");
-				return result.contacts;
-			} else {
-				addLogEntry(result.error || "Failed to process file", "error");
-				return null;
+			const processor = new ContactProcessor({ cleanupUploadedFile: false });
+			const ext = file.name.split(".").pop().toLowerCase();
+			let contacts = [];
+			if (ext === "csv") {
+				const text = await file.text();
+				contacts = await processor.extractContactsFromCsvText(text);
+			} else if (ext === "txt") {
+				const text = await file.text();
+				contacts = processor.extractContactsFromTxtText(text);
+			} else if (["xlsx", "xls"].includes(ext)) {
+				const arrayBuffer = await file.arrayBuffer();
+				contacts = processor.extractContactsFromExcelArrayBuffer(arrayBuffer);
 			}
+			return contacts;
 		} catch (error) {
-			addLogEntry(`Error connecting to backend: ${error.message}`, "error");
+			addLogEntry(`Error processing file: ${error.message}`, "error");
 			return null;
 		}
 	};
