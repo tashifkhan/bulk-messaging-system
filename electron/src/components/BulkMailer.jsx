@@ -313,576 +313,429 @@ export default function BulkMailer() {
 	};
 
 	return (
-		<div className="flex h-screen bg-gray-800">
+		<div className="flex h-screen bg-[#313338]">
 			{/* Sidebar */}
-			<div className="w-72 bg-gray-900 flex flex-col">
-				{/* Header */}
-				<div className="p-4 border-b border-gray-800">
-					<div className="flex items-center gap-3">
-						<div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-							<MailIcon />
-						</div>
-						<div>
-							<h1 className="text-white font-semibold text-lg">Bulk Mailer</h1>
-							<p className="text-gray-400 text-sm">Email Marketing Tool</p>
-						</div>
+			<aside className="w-20 flex flex-col items-center py-6 bg-[#23272a] shadow-lg border-r border-[#23272a]">
+				{/* App Icon */}
+				<div className="mb-8">
+					<div className="w-12 h-12 bg-[#5865f2] rounded-2xl flex items-center justify-center shadow-lg">
+						<MailIcon />
 					</div>
 				</div>
-
-				{/* Navigation */}
-				<div className="flex-1 p-4 space-y-2">
-					<div className="text-gray-400 text-xs font-semibold uppercase tracking-wide mb-2">
-						Email & Messaging Services
-					</div>
+				{/* Nav Icons */}
+				<nav className="flex flex-col gap-4 flex-1">
 					<button
-						className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-left transition-colors ${
+						className={`group w-12 h-12 flex items-center justify-center rounded-2xl transition-all duration-150 ${
 							activeTab === "gmail"
-								? "bg-indigo-600 text-white"
-								: "text-gray-300 hover:bg-gray-800 hover:text-white"
+								? "bg-[#5865f2] shadow-lg"
+								: "hover:bg-[#36393f]"
 						}`}
 						onClick={() => setActiveTab("gmail")}
 					>
 						<GmailIcon />
-						<span className="font-medium">Gmail API</span>
-						{isGmailAuthenticated && (
-							<div className="ml-auto w-2 h-2 bg-green-500 rounded-full"></div>
-						)}
 					</button>
 					<button
-						className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-left transition-colors ${
+						className={`group w-12 h-12 flex items-center justify-center rounded-2xl transition-all duration-150 ${
 							activeTab === "smtp"
-								? "bg-indigo-600 text-white"
-								: "text-gray-300 hover:bg-gray-800 hover:text-white"
+								? "bg-[#5865f2] shadow-lg"
+								: "hover:bg-[#36393f]"
 						}`}
 						onClick={() => setActiveTab("smtp")}
 					>
 						<ServerIcon />
-						<span className="font-medium">SMTP Server</span>
 					</button>
 					<button
-						className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-left transition-colors ${
+						className={`group w-12 h-12 flex items-center justify-center rounded-2xl transition-all duration-150 ${
 							activeTab === "whatsapp"
-								? "bg-green-600 text-white"
-								: "text-gray-300 hover:bg-gray-800 hover:text-white"
+								? "bg-green-600 shadow-lg"
+								: "hover:bg-[#36393f]"
 						}`}
 						onClick={() => setActiveTab("whatsapp")}
 					>
 						<WhatsAppIcon />
-						<span className="font-medium">WhatsApp Bulk</span>
 					</button>
-
-					{/* Stats */}
-					<div className="mt-8 pt-4 border-t border-gray-800">
-						<div className="text-gray-400 text-xs font-semibold uppercase tracking-wide mb-2">
-							Statistics
-						</div>
-						<div className="bg-gray-800 rounded-lg p-3 space-y-2">
-							<div className="flex justify-between text-sm">
-								<span className="text-gray-400">Recipients</span>
-								<span className="text-white font-medium">
-									{emailList.split("\n").filter((email) => email.trim()).length}
-								</span>
-							</div>
-							{results.length > 0 && (
-								<>
-									<div className="flex justify-between text-sm">
-										<span className="text-gray-400">Sent</span>
-										<span className="text-green-400 font-medium">
-											{results.filter((r) => r.status === "sent").length}
-										</span>
-									</div>
-									<div className="flex justify-between text-sm">
-										<span className="text-gray-400">Failed</span>
-										<span className="text-red-400 font-medium">
-											{results.filter((r) => r.status === "failed").length}
-										</span>
-									</div>
-								</>
-							)}
-						</div>
-					</div>
+				</nav>
+				{/* Footer (optional) */}
+				<div className="mt-8">
+					<span className="text-xs text-[#72767d]">v1.0</span>
 				</div>
-			</div>
-
+			</aside>
 			{/* Main Content */}
-			<div className="flex-1 flex flex-col bg-gray-700">
+			<main className="flex-1 flex flex-col bg-gradient-to-br from-[#36393f] via-[#23272a] to-[#23272a]">
 				{/* Top Bar */}
-				<div className="h-16 bg-gray-800 border-b border-gray-600 flex items-center px-6">
-					<div className="flex items-center gap-2 text-gray-300">
-						<span className="text-gray-500">#</span>
-						<span className="font-medium">
+				<header className="h-16 flex items-center px-8 border-b border-[#23272a] bg-[#23272a]/80 backdrop-blur-md shadow-sm">
+					<div className="flex items-center gap-3 text-[#dcddde] text-lg font-semibold">
+						<span className="text-[#5865f2]">#</span>
+						<span>
 							{activeTab === "gmail"
-								? "Gmail Configuration"
+								? "Gmail"
 								: activeTab === "smtp"
-								? "SMTP Configuration"
-								: "WhatsApp Bulk Messaging"}
+								? "SMTP"
+								: "WhatsApp"}
+						</span>
+						<span className="text-xs text-[#72767d] font-normal ml-2">
+							{activeTab === "gmail"
+								? "Bulk Email via Gmail API"
+								: activeTab === "smtp"
+								? "Bulk Email via SMTP"
+								: "Bulk WhatsApp Messaging"}
 						</span>
 					</div>
-				</div>
-
+				</header>
 				{/* Content Area */}
-				<div className="flex-1 overflow-y-auto">
-					<div className="max-w-4xl mx-auto p-6">
+				<section className="flex-1 overflow-y-auto p-6 md:p-10 flex flex-col items-center">
+					<div className="w-full max-w-4xl space-y-8">
 						{/* WhatsApp Tab */}
 						{activeTab === "whatsapp" && (
-							<div className="space-y-6">
-								<div className="bg-gray-800 border border-gray-600 rounded-lg p-6 space-y-6">
-									<h3 className="text-xl font-semibold text-green-400 flex items-center gap-2">
-										<WhatsAppIcon /> WhatsApp Bulk Messaging
-									</h3>
-									<div className="flex flex-col md:flex-row gap-6">
-										<div className="flex-1 space-y-4">
+							<div className="space-y-8">
+								<div className="bg-[#23272a] rounded-2xl shadow-xl border border-[#36393f] p-8 flex flex-col md:flex-row gap-8">
+									<div className="flex-1 space-y-6">
+										<h3 className="text-2xl font-bold text-green-400 flex items-center gap-2 mb-2">
+											<WhatsAppIcon /> WhatsApp Bulk Messaging
+										</h3>
+										<button
+											onClick={startWhatsAppClient}
+											className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-xl shadow transition-all flex items-center gap-2 disabled:opacity-60"
+											disabled={waSending}
+										>
+											<WhatsAppIcon /> Start WhatsApp Client
+										</button>
+										{waQR && (
+											<div className="mt-4 flex flex-col items-center">
+												<p className="text-[#b9bbbe] mb-2">
+													Scan this QR code with WhatsApp:
+												</p>
+												<img
+													src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(
+														waQR
+													)}&size=200x200`}
+													alt="WhatsApp QR"
+													className="border-4 border-green-500 rounded-xl shadow-lg"
+												/>
+											</div>
+										)}
+										<div className="mt-4">
 											<button
-												onClick={startWhatsAppClient}
-												className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-md transition-colors flex items-center gap-2"
+												onClick={importWhatsAppContacts}
+												className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-xl shadow transition-colors disabled:opacity-60"
+												type="button"
 												disabled={waSending}
 											>
-												<WhatsAppIcon /> Start WhatsApp Client
+												<FolderIcon /> Import Contacts File
 											</button>
-											{waQR && (
-												<div className="mt-4">
-													<p className="text-gray-300 mb-2">
-														Scan this QR code with WhatsApp:
-													</p>
-													<img
-														src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(
-															waQR
-														)}&size=200x200`}
-														alt="WhatsApp QR"
-														className="mx-auto border-4 border-green-500 rounded-lg"
-													/>
-												</div>
-											)}
-											<div className="mt-4">
-												<button
-													onClick={importWhatsAppContacts}
-													className="flex items-center gap-2 px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded-md transition-colors"
-													type="button"
-													disabled={waSending}
-												>
-													<FolderIcon /> Import Contacts File
-												</button>
-												<textarea
-													placeholder="Or paste numbers here (one per line, or number,name)"
-													value={waContacts
-														.map((c) => c.number + (c.name ? "," + c.name : ""))
-														.join("\n")}
-													onChange={(e) =>
-														setWaContacts(
-															e.target.value
-																.split(/\r?\n/)
-																.filter(Boolean)
-																.map((line) => {
-																	const parts = line.split(",");
-																	return {
-																		number: parts[0].trim(),
-																		name: parts[1] ? parts[1].trim() : null,
-																	};
-																})
-														)
-													}
-													rows={8}
-													className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent font-mono text-sm resize-none mt-2"
-													disabled={waSending}
-												/>
-											</div>
-											<div>
-												<label className="block text-sm font-medium text-gray-300 mb-2">
-													Message
-												</label>
-												<textarea
-													placeholder="Enter your WhatsApp message. Use {{name}} for personalization."
-													value={waMessage}
-													onChange={(e) => setWaMessage(e.target.value)}
-													rows={6}
-													className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
-													disabled={waSending}
-												/>
-											</div>
-											<div className="flex justify-end">
-												<button
-													onClick={sendWhatsAppBulk}
-													disabled={waSending}
-													className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white font-medium py-2 px-6 rounded-md transition-colors disabled:opacity-50"
-												>
-													<SendIcon />{" "}
-													{waSending ? "Sending..." : "Send WhatsApp Messages"}
-												</button>
-											</div>
+											<textarea
+												placeholder="Or paste numbers here (one per line, or number,name)"
+												value={waContacts
+													.map((c) => c.number + (c.name ? "," + c.name : ""))
+													.join("\n")}
+												onChange={(e) =>
+													setWaContacts(
+														e.target.value
+															.split(/\r?\n/)
+															.filter(Boolean)
+															.map((line) => {
+																const parts = line.split(",");
+																return {
+																	number: parts[0].trim(),
+																	name: parts[1] ? parts[1].trim() : null,
+																};
+															})
+													)
+												}
+												rows={6}
+												className="w-full mt-2 px-4 py-2 bg-[#36393f] border border-[#23272a] rounded-xl text-[#dcddde] placeholder-[#72767d] font-mono text-sm resize-none focus:ring-2 focus:ring-green-500 focus:border-transparent shadow"
+												disabled={waSending}
+											/>
 										</div>
-										<div className="w-full md:w-80 space-y-4">
-											<div className="bg-gray-900 rounded-lg p-4">
+										<div>
+											<label className="block text-sm font-semibold text-[#b9bbbe] mb-2">
+												Message
+											</label>
+											<textarea
+												placeholder="Enter your WhatsApp message. Use {{name}} for personalization."
+												value={waMessage}
+												onChange={(e) => setWaMessage(e.target.value)}
+												rows={4}
+												className="w-full px-4 py-2 bg-[#36393f] border border-[#23272a] rounded-xl text-[#dcddde] placeholder-[#72767d] resize-none focus:ring-2 focus:ring-green-500 focus:border-transparent shadow"
+												disabled={waSending}
+											/>
+										</div>
+										<div className="flex justify-end">
+											<button
+												onClick={sendWhatsAppBulk}
+												disabled={waSending}
+												className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white font-semibold py-2 px-8 rounded-xl shadow transition-all disabled:opacity-50"
+											>
+												<SendIcon />{" "}
+												{waSending ? "Sending..." : "Send WhatsApp Messages"}
+											</button>
+										</div>
+									</div>
+									<div className="w-full md:w-80 space-y-6 flex flex-col">
+										<div className="bg-[#36393f] rounded-xl p-5 shadow border border-[#23272a]">
+											<h4 className="text-green-400 font-semibold mb-2">
+												Status
+											</h4>
+											<p className="text-[#b9bbbe] break-words whitespace-pre-line min-h-[48px]">
+												{waStatus}
+											</p>
+										</div>
+										{waResults.length > 0 && (
+											<div className="bg-[#36393f] rounded-xl p-5 shadow border border-[#23272a] max-h-64 overflow-y-auto">
 												<h4 className="text-green-400 font-semibold mb-2">
-													Status
+													Results
 												</h4>
-												<p className="text-gray-300 break-words whitespace-pre-line min-h-[48px]">
-													{waStatus}
-												</p>
+												{waResults.slice(-10).map((msg, idx) => (
+													<div
+														key={idx}
+														className={`text-sm ${
+															msg.includes("Sent to")
+																? "text-green-400"
+																: msg.includes("Failed")
+																? "text-red-400"
+																: "text-[#b9bbbe]"
+														}`}
+													>
+														{msg}
+													</div>
+												))}
+												{waResults.length > 10 && (
+													<p className="text-center text-[#72767d] text-xs py-2">
+														... and {waResults.length - 10} more
+													</p>
+												)}
 											</div>
-											{waResults.length > 0 && (
-												<div className="bg-gray-900 rounded-lg p-4 max-h-64 overflow-y-auto">
-													<h4 className="text-green-400 font-semibold mb-2">
-														Results
-													</h4>
-													{waResults.slice(-10).map((msg, idx) => (
-														<div
-															key={idx}
-															className={`text-sm ${
-																msg.includes("Sent to")
-																	? "text-green-400"
-																	: msg.includes("Failed")
-																	? "text-red-400"
-																	: "text-gray-300"
-															}`}
-														>
-															{msg}
-														</div>
-													))}
-													{waResults.length > 10 && (
-														<p className="text-center text-gray-400 text-xs py-2">
-															... and {waResults.length - 10} more
-														</p>
-													)}
-												</div>
-											)}
-										</div>
+										)}
 									</div>
 								</div>
 							</div>
 						)}
-
-						{/* Gmail/SMTP Tabs */}
+						{/* Gmail/SMTP Tabs (keep as cards, update colors/spacing for Discord look) */}
 						{activeTab === "gmail" && (
-							<div className="space-y-6">
-								{/* Gmail Auth Section */}
-								<div className="bg-gray-800 border border-gray-600 rounded-lg p-6">
+							<div className="space-y-8">
+								<div className="bg-[#23272a] rounded-2xl shadow-xl border border-[#36393f] p-8">
+									{/* Gmail Auth Section */}
 									{!isGmailAuthenticated ? (
-										<div className="text-center space-y-4">
-											<div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto">
+										<div className="text-center space-y-6">
+											<div className="w-20 h-20 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto">
 												<LockIcon />
 											</div>
-											<div>
-												<h3 className="text-xl font-semibold text-white mb-2">
-													Gmail Authentication Required
-												</h3>
-												<p className="text-gray-400">
-													Connect your Gmail account to start sending emails
-												</p>
-											</div>
+											<h3 className="text-2xl font-bold text-white mb-2">
+												Gmail Authentication Required
+											</h3>
+											<p className="text-[#b9bbbe]">
+												Connect your Gmail account to start sending emails
+											</p>
 											<button
 												onClick={authenticateGmail}
-												className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-6 rounded-md transition-colors flex items-center gap-2 mx-auto"
+												className="bg-[#ea4335] hover:bg-[#c5221f] text-white font-semibold py-2 px-8 rounded-xl shadow transition-all flex items-center gap-2 mx-auto text-lg"
 											>
-												<GmailIcon />
-												Connect Gmail
+												<GmailIcon /> Connect Gmail
 											</button>
 										</div>
 									) : (
-										<div className="text-center space-y-4">
-											<div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto">
+										<div className="text-center space-y-6">
+											<div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto">
 												<CheckIcon />
 											</div>
+											<h3 className="text-2xl font-bold text-white mb-2">
+												Gmail Connected
+											</h3>
+											<p className="text-[#b9bbbe]">
+												Ready to send emails via Gmail API
+											</p>
+										</div>
+									)}
+									{/* Email Composer */}
+									{isGmailAuthenticated && (
+										<form className="mt-10 space-y-8">
 											<div>
-												<h3 className="text-xl font-semibold text-white mb-2">
-													Gmail Connected
-												</h3>
-												<p className="text-gray-400">
-													Ready to send emails via Gmail API
+												<label className="block text-sm font-semibold text-[#b9bbbe] mb-2">
+													Subject
+												</label>
+												<input
+													type="text"
+													placeholder="Enter email subject"
+													value={subject}
+													onChange={(e) => setSubject(e.target.value)}
+													className="w-full px-5 py-3 bg-[#36393f] border border-[#23272a] rounded-xl text-[#dcddde] placeholder-[#72767d] text-base shadow focus:ring-2 focus:ring-[#5865f2] focus:border-transparent transition-all"
+												/>
+											</div>
+											<div>
+												<div className="flex items-center justify-between mb-2">
+													<label className="block text-sm font-semibold text-[#b9bbbe]">
+														Recipients
+													</label>
+													<button
+														onClick={importEmailList}
+														className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-xl shadow transition-colors"
+														type="button"
+													>
+														<FolderIcon /> Import File
+													</button>
+												</div>
+												<textarea
+													placeholder="Enter email addresses (one per line)\nexample1@email.com\nexample2@email.com"
+													value={emailList}
+													onChange={(e) => setEmailList(e.target.value)}
+													rows={5}
+													className="w-full px-5 py-3 bg-[#36393f] border border-[#23272a] rounded-xl text-[#dcddde] placeholder-[#72767d] font-mono text-base resize-none shadow focus:ring-2 focus:ring-[#5865f2] focus:border-transparent transition-all"
+												/>
+											</div>
+											<div>
+												<label className="block text-sm font-semibold text-[#b9bbbe] mb-2">
+													Message
+												</label>
+												<textarea
+													placeholder="Enter your email message (HTML supported)"
+													value={message}
+													onChange={(e) => setMessage(e.target.value)}
+													rows={8}
+													className="w-full px-5 py-3 bg-[#36393f] border border-[#23272a] rounded-xl text-[#dcddde] placeholder-[#72767d] text-base resize-none shadow focus:ring-2 focus:ring-[#5865f2] focus:border-transparent transition-all"
+												/>
+											</div>
+											<div>
+												<label className="block text-sm font-semibold text-[#b9bbbe] mb-2">
+													Delay between emails (milliseconds)
+												</label>
+												<input
+													type="number"
+													value={delay}
+													onChange={(e) => setDelay(e.target.value)}
+													min="100"
+													max="10000"
+													className="w-full px-5 py-3 bg-[#36393f] border border-[#23272a] rounded-xl text-[#dcddde] placeholder-[#72767d] text-base shadow focus:ring-2 focus:ring-[#5865f2] focus:border-transparent transition-all"
+												/>
+												<p className="text-xs text-[#72767d] mt-1">
+													Recommended: 1000ms (1 second) to avoid rate limits
 												</p>
 											</div>
-										</div>
-									)}
-								</div>
-							</div>
-						)}
-
-						{activeTab === "smtp" && (
-							<div className="space-y-6">
-								<div className="bg-gray-800 border border-gray-600 rounded-lg p-6">
-									<h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-										<ServerIcon />
-										SMTP Server Configuration
-									</h3>
-									<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-										<div>
-											<label className="block text-sm font-medium text-gray-300 mb-2">
-												SMTP Host
-											</label>
-											<input
-												type="text"
-												placeholder="smtp.gmail.com"
-												value={smtpConfig.host}
-												onChange={(e) =>
-													setSMTPConfig({ ...smtpConfig, host: e.target.value })
-												}
-												className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-											/>
-										</div>
-										<div>
-											<label className="block text-sm font-medium text-gray-300 mb-2">
-												Port
-											</label>
-											<input
-												type="number"
-												placeholder="587"
-												value={smtpConfig.port}
-												onChange={(e) =>
-													setSMTPConfig({
-														...smtpConfig,
-														port: parseInt(e.target.value),
-													})
-												}
-												className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-											/>
-										</div>
-										<div>
-											<label className="block text-sm font-medium text-gray-300 mb-2">
-												Email Address
-											</label>
-											<input
-												type="email"
-												placeholder="your.email@gmail.com"
-												value={smtpConfig.user}
-												onChange={(e) =>
-													setSMTPConfig({ ...smtpConfig, user: e.target.value })
-												}
-												className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-											/>
-										</div>
-										<div>
-											<label className="block text-sm font-medium text-gray-300 mb-2">
-												Password
-											</label>
-											<input
-												type="password"
-												placeholder="App Password"
-												value={smtpConfig.pass}
-												onChange={(e) =>
-													setSMTPConfig({ ...smtpConfig, pass: e.target.value })
-												}
-												className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-											/>
-										</div>
-									</div>
-									<div className="mt-4">
-										<label className="flex items-center gap-2 text-gray-300 cursor-pointer">
-											<input
-												type="checkbox"
-												checked={smtpConfig.secure}
-												onChange={(e) =>
-													setSMTPConfig({
-														...smtpConfig,
-														secure: e.target.checked,
-													})
-												}
-												className="w-4 h-4 text-indigo-600 bg-gray-900 border-gray-600 rounded focus:ring-indigo-500"
-											/>
-											<span className="text-sm">Use SSL/TLS (port 465)</span>
-										</label>
-									</div>
-								</div>
-							</div>
-						)}
-
-						{/* Email Composer */}
-						{(activeTab === "gmail" ? isGmailAuthenticated : true) && (
-							<div className="bg-gray-800 border border-gray-600 rounded-lg p-6 space-y-6">
-								<h3 className="text-xl font-semibold text-white flex items-center gap-2">
-									<MailIcon />
-									Compose Email
-								</h3>
-
-								{/* Subject */}
-								<div>
-									<label className="block text-sm font-medium text-gray-300 mb-2">
-										Subject
-									</label>
-									<input
-										type="text"
-										placeholder="Enter email subject"
-										value={subject}
-										onChange={(e) => setSubject(e.target.value)}
-										className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-									/>
-								</div>
-
-								{/* Recipients */}
-								<div>
-									<div className="flex items-center justify-between mb-2">
-										<label className="block text-sm font-medium text-gray-300">
-											Recipients
-										</label>
-										<button
-											onClick={importEmailList}
-											className="flex items-center gap-2 px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded-md transition-colors"
-											type="button"
-										>
-											<FolderIcon />
-											Import File
-										</button>
-									</div>
-									<textarea
-										placeholder="Enter email addresses (one per line)&#10;example1@email.com&#10;example2@email.com"
-										value={emailList}
-										onChange={(e) => setEmailList(e.target.value)}
-										rows={8}
-										className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent font-mono text-sm resize-none"
-									/>
-								</div>
-
-								{/* Message */}
-								<div>
-									<label className="block text-sm font-medium text-gray-300 mb-2">
-										Message
-									</label>
-									<textarea
-										placeholder="Enter your email message (HTML supported)"
-										value={message}
-										onChange={(e) => setMessage(e.target.value)}
-										rows={10}
-										className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
-									/>
-								</div>
-
-								{/* Delay */}
-								<div>
-									<label className="block text-sm font-medium text-gray-300 mb-2">
-										Delay between emails (milliseconds)
-									</label>
-									<input
-										type="number"
-										value={delay}
-										onChange={(e) => setDelay(e.target.value)}
-										min="100"
-										max="10000"
-										className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-									/>
-									<p className="text-xs text-gray-400 mt-1">
-										Recommended: 1000ms (1 second) to avoid rate limits
-									</p>
-								</div>
-
-								{/* Send Button */}
-								<div className="flex justify-end">
-									<button
-										onClick={
-											activeTab === "gmail" ? sendGmailBulk : sendSMTPBulk
-										}
-										disabled={isSending}
-										className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-600 text-white font-medium py-2 px-6 rounded-md transition-colors disabled:opacity-50"
-									>
-										<SendIcon />
-										{isSending ? "Sending..." : "Send Emails"}
-									</button>
-								</div>
-							</div>
-						)}
-
-						{/* Progress Section */}
-						{isSending && (
-							<div className="bg-gray-800 border border-gray-600 rounded-lg p-6">
-								<h3 className="text-lg font-semibold text-white mb-4">
-									Sending Progress
-								</h3>
-								<div className="w-full bg-gray-700 rounded-full h-2 mb-4">
-									<div
-										className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
-										style={{
-											width: `${(progress.current / progress.total) * 100}%`,
-										}}
-									/>
-								</div>
-								<div className="flex justify-between text-sm text-gray-300 mb-2">
-									<span>
-										{progress.current} of {progress.total} emails sent
-									</span>
-									{progress.recipient && (
-										<span className="text-indigo-400">
-											Current: {progress.recipient}
-										</span>
-									)}
-								</div>
-								<p
-									className={`text-sm font-medium ${
-										progress.status === "sent"
-											? "text-green-400"
-											: progress.status === "failed"
-											? "text-red-400"
-											: "text-indigo-400"
-									}`}
-								>
-									Status: {progress.status}
-									{progress.error && (
-										<span className="text-red-400"> - {progress.error}</span>
-									)}
-								</p>
-							</div>
-						)}
-
-						{/* Results Section */}
-						{results.length > 0 && (
-							<div className="bg-gray-800 border border-gray-600 rounded-lg p-6">
-								<h3 className="text-lg font-semibold text-white mb-4">
-									Results
-								</h3>
-								<div className="flex gap-4 mb-4">
-									<div className="flex items-center gap-2 text-sm">
-										<div className="w-3 h-3 bg-green-500 rounded-full"></div>
-										<span className="text-gray-300">
-											Sent: {results.filter((r) => r.status === "sent").length}
-										</span>
-									</div>
-									<div className="flex items-center gap-2 text-sm">
-										<div className="w-3 h-3 bg-red-500 rounded-full"></div>
-										<span className="text-gray-300">
-											Failed:{" "}
-											{results.filter((r) => r.status === "failed").length}
-										</span>
-									</div>
-								</div>
-
-								<div className="max-h-64 overflow-y-auto space-y-2">
-									{results.slice(0, 10).map((result, index) => (
-										<div
-											key={index}
-											className={`flex items-center justify-between p-3 rounded-md ${
-												result.status === "sent"
-													? "bg-green-500/10 border-l-4 border-green-500"
-													: "bg-red-500/10 border-l-4 border-red-500"
-											}`}
-										>
-											<span className="text-gray-300 font-medium">
-												{result.recipient}
-											</span>
-											<div className="flex items-center gap-2">
-												<span
-													className={`text-xs font-semibold uppercase ${
-														result.status === "sent"
-															? "text-green-400"
-															: "text-red-400"
-													}`}
+											<div className="flex justify-end">
+												<button
+													onClick={sendGmailBulk}
+													disabled={isSending}
+													type="button"
+													className="flex items-center gap-2 bg-[#5865f2] hover:bg-[#4752c4] disabled:bg-gray-600 text-white font-semibold py-3 px-8 rounded-xl shadow transition-all disabled:opacity-50 text-lg"
 												>
-													{result.status}
-												</span>
-												{result.error && (
-													<span className="text-red-300 text-xs">
-														({result.error})
-													</span>
-												)}
+													<SendIcon />{" "}
+													{isSending ? "Sending..." : "Send Emails"}
+												</button>
+											</div>
+										</form>
+									)}
+								</div>
+							</div>
+						)}
+						{activeTab === "smtp" && (
+							<div className="space-y-8">
+								<div className="bg-[#23272a] rounded-2xl shadow-xl border border-[#36393f] p-8">
+									<form className="space-y-8">
+										<h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+											<ServerIcon /> SMTP Server Configuration
+										</h3>
+										<div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+											<div>
+												<label className="block text-sm font-semibold text-[#b9bbbe] mb-2">
+													SMTP Host
+												</label>
+												<input
+													type="text"
+													placeholder="smtp.gmail.com"
+													value={smtpConfig.host}
+													onChange={(e) =>
+														setSMTPConfig({
+															...smtpConfig,
+															host: e.target.value,
+														})
+													}
+													className="w-full px-5 py-3 bg-[#36393f] border border-[#23272a] rounded-xl text-[#dcddde] placeholder-[#72767d] text-base shadow focus:ring-2 focus:ring-[#5865f2] focus:border-transparent transition-all"
+												/>
+											</div>
+											<div>
+												<label className="block text-sm font-semibold text-[#b9bbbe] mb-2">
+													Port
+												</label>
+												<input
+													type="number"
+													placeholder="587"
+													value={smtpConfig.port}
+													onChange={(e) =>
+														setSMTPConfig({
+															...smtpConfig,
+															port: parseInt(e.target.value),
+														})
+													}
+													className="w-full px-5 py-3 bg-[#36393f] border border-[#23272a] rounded-xl text-[#dcddde] placeholder-[#72767d] text-base shadow focus:ring-2 focus:ring-[#5865f2] focus:border-transparent transition-all"
+												/>
+											</div>
+											<div>
+												<label className="block text-sm font-semibold text-[#b9bbbe] mb-2">
+													Email Address
+												</label>
+												<input
+													type="email"
+													placeholder="your.email@gmail.com"
+													value={smtpConfig.user}
+													onChange={(e) =>
+														setSMTPConfig({
+															...smtpConfig,
+															user: e.target.value,
+														})
+													}
+													className="w-full px-5 py-3 bg-[#36393f] border border-[#23272a] rounded-xl text-[#dcddde] placeholder-[#72767d] text-base shadow focus:ring-2 focus:ring-[#5865f2] focus:border-transparent transition-all"
+												/>
+											</div>
+											<div>
+												<label className="block text-sm font-semibold text-[#b9bbbe] mb-2">
+													Password
+												</label>
+												<input
+													type="password"
+													placeholder="App Password"
+													value={smtpConfig.pass}
+													onChange={(e) =>
+														setSMTPConfig({
+															...smtpConfig,
+															pass: e.target.value,
+														})
+													}
+													className="w-full px-5 py-3 bg-[#36393f] border border-[#23272a] rounded-xl text-[#dcddde] placeholder-[#72767d] text-base shadow focus:ring-2 focus:ring-[#5865f2] focus:border-transparent transition-all"
+												/>
 											</div>
 										</div>
-									))}
-									{results.length > 10 && (
-										<p className="text-center text-gray-400 text-sm py-2">
-											... and {results.length - 10} more results
-										</p>
-									)}
+										<div className="mt-4">
+											<label className="flex items-center gap-2 text-[#b9bbbe] cursor-pointer">
+												<input
+													type="checkbox"
+													checked={smtpConfig.secure}
+													onChange={(e) =>
+														setSMTPConfig({
+															...smtpConfig,
+															secure: e.target.checked,
+														})
+													}
+													className="w-5 h-5 text-[#5865f2] bg-[#36393f] border-[#23272a] rounded focus:ring-[#5865f2] transition-all"
+												/>
+												<span className="text-sm">Use SSL/TLS (port 465)</span>
+											</label>
+										</div>
+										<div className="flex justify-end">
+											<button
+												onClick={sendSMTPBulk}
+												disabled={isSending}
+												type="button"
+												className="flex items-center gap-2 bg-[#5865f2] hover:bg-[#4752c4] disabled:bg-gray-600 text-white font-semibold py-3 px-8 rounded-xl shadow transition-all disabled:opacity-50 text-lg"
+											>
+												<SendIcon /> {isSending ? "Sending..." : "Send Emails"}
+											</button>
+										</div>
+									</form>
 								</div>
 							</div>
 						)}
 					</div>
-				</div>
-			</div>
+				</section>
+			</main>
 		</div>
 	);
 }
