@@ -4,7 +4,8 @@ import { fileURLToPath } from 'url'
 import { isDev } from "./utils.js"
 import { handleGmailAuth, handleSendEmail, handleGmailToken } from "./gmail-handler.js"
 import { handleSMTPSend } from "./smtp-handler.js"
-import { Client, LocalAuth } from 'whatsapp-web.js'
+import pkg from 'whatsapp-web.js'
+const { Client, LocalAuth } = pkg
 import qrcode from 'qrcode-terminal'
 import fs from 'fs'
 import csv from 'csv-parser'

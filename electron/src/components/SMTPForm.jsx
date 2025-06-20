@@ -1,4 +1,4 @@
-import { ServerIcon, SendIcon } from "./BulkMailer";
+import { ServerIcon, SendIcon } from "./Icons";
 export default function SMTPForm({
 	smtpConfig,
 	setSMTPConfig,

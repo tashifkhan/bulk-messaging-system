@@ -1,20 +1,5 @@
 import { useState, useEffect } from "react";
-
-const WhatsAppIcon = () => (
-	<svg className="w-5 h-5" viewBox="0 0 32 32" fill="currentColor">
-		<path d="M16 3C9.373 3 4 8.373 4 15c0 2.385.832 4.584 2.236 6.393L4 29l7.828-2.236C13.416 27.168 15.615 28 18 28c6.627 0 12-5.373 12-12S22.627 3 16 3zm0 22c-2.021 0-3.938-.586-5.555-1.6l-.396-.25-4.646 1.328 1.328-4.646-.25-.396C6.586 18.938 6 17.021 6 15c0-5.514 4.486-10 10-10s10 4.486 10 10-4.486 10-10 10zm5.29-7.71c-.26-.13-1.54-.76-1.78-.85-.24-.09-.41-.13-.58.13-.17.26-.67.85-.82 1.02-.15.17-.3.19-.56.06-.26-.13-1.09-.4-2.07-1.28-.76-.68-1.27-1.52-1.42-1.78-.15-.26-.02-.4.11-.53.11-.11.26-.3.39-.45.13-.15.17-.26.26-.43.09-.17.04-.32-.02-.45-.06-.13-.58-1.39-.8-1.91-.21-.51-.43-.44-.58-.45-.15-.01-.32-.01-.5-.01-.17 0-.45.06-.68.32-.23.26-.9.88-.9 2.15s.92 2.49 1.05 2.66c.13.17 1.81 2.77 4.39 3.78.61.21 1.09.33 1.46.42.61.13 1.16.11 1.6.07.49-.05 1.54-.63 1.76-1.24.22-.61.22-1.13.15-1.24-.07-.11-.24-.17-.5-.3z" />
-	</svg>
-);
-const FolderIcon = () => (
-	<svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-		<path d="M9.75 3A3.75 3.75 0 0 0 6 6.75v10.5A3.75 3.75 0 0 0 9.75 21h4.5A3.75 3.75 0 0 0 18 17.25V9a3 3 0 0 0-3-3h-1.379a1.5 1.5 0 0 1-1.06-.44L11.5 4.5A1.5 1.5 0 0 0 10.44 4.06L9.75 3z" />
-	</svg>
-);
-const SendIcon = () => (
-	<svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-		<path d="M3.478 2.405a.75.75 0 0 0-.926.94l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.405z" />
-	</svg>
-);
+import { FolderIcon, SendIcon, WhatsAppIcon } from "./Icons";
 
 export default function WhatsAppForm() {
 	const [waContacts, setWaContacts] = useState([]);
@@ -82,28 +67,28 @@ export default function WhatsAppForm() {
 	};
 
 	return (
-		<div className="flex justify-center items-start w-full">
-			<div className="bg-[#23272a] rounded-2xl shadow-xl border border-[#36393f] p-8 flex flex-col md:flex-row gap-8 w-full max-w-3xl">
-				<form className="flex-1 space-y-6">
-					<div className="flex items-center gap-2 mb-4">
+		<div className="flex justify-center items-start w-full min-h-[80vh] bg-[#313338] py-12">
+			<div className="bg-[#23272a] rounded-3xl shadow-2xl border border-[#2b2d31] p-10 flex flex-col md:flex-row gap-10 w-full max-w-4xl">
+				<form className="flex-1 space-y-8">
+					<div className="flex items-center gap-3 mb-6">
 						<span className="text-green-500">
 							<WhatsAppIcon />
 						</span>
-						<h3 className="text-xl font-semibold text-white">
+						<h3 className="text-2xl font-bold text-white tracking-tight">
 							WhatsApp Bulk Messaging
 						</h3>
 					</div>
 					<button
 						onClick={startWhatsAppClient}
-						className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-lg shadow-sm transition-all flex items-center gap-2 disabled:opacity-60 text-base mb-2"
+						className="bg-green-500 hover:bg-green-600 active:bg-green-700 text-white font-semibold py-2.5 px-7 rounded-full shadow-md transition-all flex items-center gap-2 disabled:opacity-60 text-base mb-2 focus:outline-none focus:ring-2 focus:ring-green-400"
 						disabled={waSending}
 						type="button"
 					>
 						<WhatsAppIcon /> Start WhatsApp Client
 					</button>
 					{waQR && (
-						<div className="mt-2 flex flex-col items-center">
-							<p className="text-[#b9bbbe] text-sm mb-2">
+						<div className="mt-4 flex flex-col items-center bg-[#23272a] border border-[#2b2d31] rounded-2xl p-4 shadow-lg">
+							<p className="text-[#b9bbbe] text-sm mb-2 font-medium">
 								Scan this QR code with WhatsApp:
 							</p>
 							<img
@@ -111,18 +96,18 @@ export default function WhatsAppForm() {
 									waQR
 								)}&size=200x200`}
 								alt="WhatsApp QR"
-								className="border-2 border-green-500 rounded-lg shadow"
+								className="border-4 border-green-500 rounded-xl shadow-md bg-white"
 							/>
 						</div>
 					)}
 					<div>
-						<div className="flex items-center justify-between mb-1">
-							<label className="block text-xs font-medium text-[#b9bbbe]">
+						<div className="flex items-center justify-between mb-2">
+							<label className="block text-xs font-semibold text-[#b9bbbe] tracking-wide uppercase">
 								Contacts
 							</label>
 							<button
 								onClick={importWhatsAppContacts}
-								className="flex items-center gap-2 px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded-lg shadow-sm transition-colors disabled:opacity-60"
+								className="flex items-center gap-2 px-4 py-1.5 bg-[#5865f2] hover:bg-[#4752c4] text-white text-xs rounded-full shadow-sm transition-colors disabled:opacity-60 font-semibold focus:outline-none focus:ring-2 focus:ring-[#5865f2]"
 								type="button"
 								disabled={waSending}
 							>
@@ -149,15 +134,15 @@ export default function WhatsAppForm() {
 								)
 							}
 							rows={4}
-							className="w-full mt-1 px-4 py-2 bg-[#40444b] border border-[#23272a] rounded-lg text-[#dcddde] placeholder-[#72767d] font-mono text-sm resize-none shadow-sm focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+							className="w-full mt-1 px-4 py-2.5 bg-[#313338] border border-[#23272a] rounded-xl text-[#dcddde] placeholder-[#72767d] font-mono text-sm resize-none shadow focus:ring-2 focus:ring-[#5865f2] focus:border-transparent transition-all"
 							disabled={waSending}
 						/>
-						<p className="text-xs text-[#72767d] mt-1">
+						<p className="text-xs text-[#72767d] mt-1 font-mono">
 							Example: <span className="font-mono">+1234567890,John Doe</span>
 						</p>
 					</div>
 					<div>
-						<label className="block text-xs font-medium text-[#b9bbbe] mb-1">
+						<label className="block text-xs font-semibold text-[#b9bbbe] mb-2 tracking-wide uppercase">
 							Message
 						</label>
 						<textarea
@@ -165,7 +150,7 @@ export default function WhatsAppForm() {
 							value={waMessage}
 							onChange={(e) => setWaMessage(e.target.value)}
 							rows={4}
-							className="w-full px-4 py-2 bg-[#40444b] border border-[#23272a] rounded-lg text-[#dcddde] placeholder-[#72767d] text-sm resize-none shadow-sm focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+							className="w-full px-4 py-2.5 bg-[#313338] border border-[#23272a] rounded-xl text-[#dcddde] placeholder-[#72767d] text-sm resize-none shadow focus:ring-2 focus:ring-[#5865f2] focus:border-transparent transition-all"
 							disabled={waSending}
 						/>
 					</div>
@@ -173,34 +158,34 @@ export default function WhatsAppForm() {
 						onClick={sendWhatsAppBulk}
 						disabled={waSending}
 						type="button"
-						className="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white font-semibold py-2 px-6 rounded-lg shadow-sm transition-all disabled:opacity-50 text-base mt-2"
+						className="flex items-center gap-2 bg-green-500 hover:bg-green-600 active:bg-green-700 disabled:bg-gray-600 text-white font-bold py-2.5 px-7 rounded-full shadow-md transition-all disabled:opacity-50 text-base mt-4 focus:outline-none focus:ring-2 focus:ring-green-400"
 					>
 						<SendIcon /> {waSending ? "Sending..." : "Send WhatsApp Messages"}
 					</button>
 				</form>
-				<div className="w-full md:w-72 space-y-4 flex flex-col">
-					<div className="bg-[#36393f] rounded-lg p-4 shadow-sm border border-[#23272a]">
-						<h4 className="text-green-400 font-semibold text-sm mb-1">
+				<div className="w-full md:w-80 space-y-5 flex flex-col">
+					<div className="bg-[#2b2d31] rounded-2xl p-5 shadow border border-[#23272a]">
+						<h4 className="text-green-400 font-bold text-sm mb-2 tracking-wide uppercase">
 							Status
 						</h4>
-						<p className="text-[#b9bbbe] text-xs break-words whitespace-pre-line min-h-[32px]">
+						<p className="text-[#b9bbbe] text-xs break-words whitespace-pre-line min-h-[32px] font-medium">
 							{waStatus}
 						</p>
 					</div>
 					{waResults.length > 0 && (
-						<div className="bg-[#36393f] rounded-lg p-4 shadow-sm border border-[#23272a] max-h-48 overflow-y-auto">
-							<h4 className="text-green-400 font-semibold text-sm mb-1">
+						<div className="bg-[#2b2d31] rounded-2xl p-5 shadow border border-[#23272a] max-h-56 overflow-y-auto">
+							<h4 className="text-green-400 font-bold text-sm mb-2 tracking-wide uppercase">
 								Results
 							</h4>
 							{waResults.slice(-10).map((msg, idx) => (
 								<div
 									key={idx}
-									className={`text-xs ${
+									className={`text-xs font-medium py-0.5 px-2 rounded-lg ${
 										msg.includes("Sent to")
-											? "text-green-400"
+											? "text-green-400 bg-green-500/10"
 											: msg.includes("Failed")
-											? "text-red-400"
-											: "text-[#b9bbbe]"
+											? "text-red-400 bg-red-500/10"
+											: "text-[#b9bbbe] bg-[#23272a]"
 									}`}
 								>
 									{msg}
