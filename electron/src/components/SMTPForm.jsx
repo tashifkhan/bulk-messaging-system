@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ServerIcon, FolderIcon, SendIcon, CheckIcon } from "./Icons";
+import { ServerIcon, FolderIcon, SendIcon } from "./Icons";
 
 export default function SMTPForm({
 	smtpConfig,
