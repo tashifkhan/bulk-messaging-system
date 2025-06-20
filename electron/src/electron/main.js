@@ -6,7 +6,7 @@ import { handleGmailAuth, handleSendEmail, handleGmailToken } from "./gmail-hand
 import { handleSMTPSend } from "./smtp-handler.js"
 import pkg from 'whatsapp-web.js'
 const { Client, LocalAuth } = pkg
-import qrcode from 'qrcode-terminal'
+import QRCode from 'qrcode'
 import fs from 'fs'
 import csv from 'csv-parser'
 
@@ -23,6 +23,8 @@ function createWindow() {
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
+            enableRemoteModule: false,
+            webSecurity: true,
             preload: path.join(__dirname, 'preload.js')
         },
         icon: path.join(__dirname, '../../desktopIcon.icns')
@@ -35,11 +37,22 @@ function createWindow() {
         const distPath = path.join(__dirname, '../../dist-react/index.html');
         console.log('Loading from dist path:', distPath);
         console.log('Dist path exists:', fs.existsSync(distPath));
-        mainWindow.loadFile(distPath);
+        
+        mainWindow.loadFile(distPath).catch(err => {
+            console.error('Failed to load dist file:', err);
+        });
+        
+        // Add error handling for failed resource loads
+        mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+            console.error('Failed to load:', validatedURL, 'Error:', errorDescription);
+        });
     }
 }
 
 app.whenReady().then(() => {
+    // Clean up WhatsApp files on startup for fresh session
+    deleteWhatsAppFiles();
+    
     createWindow();
 
     app.on('activate', () => {
@@ -50,9 +63,39 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
+    // Clean up WhatsApp files when app is closing
+    if (whatsappClient) {
+        try {
+            // Attempt to logout from WhatsApp before closing
+            whatsappClient.logout().catch(err => {
+                console.error('Error during logout on close:', err);
+            });
+        } catch (error) {
+            console.error('Error attempting logout on close:', error);
+        }
+        whatsappClient = null;
+    }
+    deleteWhatsAppFiles();
+    
     if (process.platform !== 'darwin') {
         app.quit();
     }
+});
+
+app.on('before-quit', () => {
+    // Additional cleanup before app quits
+    if (whatsappClient) {
+        try {
+            // Attempt to logout from WhatsApp before quitting
+            whatsappClient.logout().catch(err => {
+                console.error('Error during logout on quit:', err);
+            });
+        } catch (error) {
+            console.error('Error attempting logout on quit:', error);
+        }
+        whatsappClient = null;
+    }
+    deleteWhatsAppFiles();
 });
 
 // IPC handlers for Gmail
@@ -69,6 +112,9 @@ ipcMain.handle('whatsapp-start-client', async () => {
         mainWindow.webContents.send('whatsapp-status', 'Client already running.');
         return;
     }
+
+    // Send initializing status immediately
+    mainWindow.webContents.send('whatsapp-status', 'Initializing WhatsApp client...');
 
     whatsappClient = new Client({
         authStrategy: new LocalAuth(),
@@ -88,15 +134,28 @@ ipcMain.handle('whatsapp-start-client', async () => {
     });
 
     whatsappClient.on('qr', (qr) => {
-        mainWindow.webContents.send('whatsapp-qr', qr);
+        mainWindow.webContents.send('whatsapp-status', 'Scan QR code to authenticate');
+        // Convert QR string to data URL using QRCode library
+        QRCode.toDataURL(qr)
+            .then(dataUrl => {
+                mainWindow.webContents.send('whatsapp-qr', dataUrl);
+            })
+            .catch(err => {
+                console.error('Error generating QR code:', err);
+                mainWindow.webContents.send('whatsapp-status', 'Error generating QR code');
+            });
     });
 
     whatsappClient.on('ready', () => {
         mainWindow.webContents.send('whatsapp-status', 'Client is ready!');
+        // Clear QR code when ready
+        mainWindow.webContents.send('whatsapp-qr', null);
     });
 
     whatsappClient.on('authenticated', () => {
         mainWindow.webContents.send('whatsapp-status', 'Authenticated!');
+        // Clear QR code when authenticated
+        mainWindow.webContents.send('whatsapp-qr', null);
     });
 
     whatsappClient.on('auth_failure', (msg) => {
@@ -109,8 +168,8 @@ ipcMain.handle('whatsapp-start-client', async () => {
     });
 
     try {
+        mainWindow.webContents.send('whatsapp-status', 'Starting WhatsApp client...');
         await whatsappClient.initialize();
-        mainWindow.webContents.send('whatsapp-status', 'WhatsApp client initializing...');
     } catch (error) {
         mainWindow.webContents.send('whatsapp-status', 'Failed to initialize client: ' + error.message);
     }
@@ -254,5 +313,58 @@ ipcMain.handle('read-email-list-file', async (event, filePath) => {
     } catch (error) {
         console.error('Error reading email list file:', error);
         throw error;
+    }
+});
+
+// Helper function to delete WhatsApp cache and auth files
+const deleteWhatsAppFiles = () => {
+    try {
+        const cacheDir = path.join(__dirname, '../../.wwebjs_cache');
+        const authDir = path.join(__dirname, '../../.wwebjs_auth');
+        
+        // Delete cache directory
+        if (fs.existsSync(cacheDir)) {
+            fs.rmSync(cacheDir, { recursive: true, force: true });
+            console.log('Deleted .wwebjs_cache directory');
+        }
+        
+        // Delete auth directory
+        if (fs.existsSync(authDir)) {
+            fs.rmSync(authDir, { recursive: true, force: true });
+            console.log('Deleted .wwebjs_auth directory');
+        }
+    } catch (error) {
+        console.error('Error deleting WhatsApp files:', error);
+    }
+};
+
+// IPC handlers for WhatsApp logout
+ipcMain.handle('whatsapp-logout', async () => {
+    if (whatsappClient) {
+        try {
+            await whatsappClient.logout();
+            whatsappClient = null;
+            
+            // Delete cache and auth files after logout
+            deleteWhatsAppFiles();
+            
+            mainWindow.webContents.send('whatsapp-status', 'Disconnected');
+            mainWindow.webContents.send('whatsapp-qr', null);
+            return { success: true, message: 'Successfully logged out from WhatsApp and cleared cache' };
+        } catch (error) {
+            console.error('Error logging out from WhatsApp:', error);
+            whatsappClient = null; // Force cleanup even if logout fails
+            
+            // Delete cache and auth files even if logout fails
+            deleteWhatsAppFiles();
+            
+            mainWindow.webContents.send('whatsapp-status', 'Disconnected (forced)');
+            mainWindow.webContents.send('whatsapp-qr', null);
+            return { success: false, message: `Logout error: ${error.message}` };
+        }
+    } else {
+        // If no active session, still clean up any leftover files
+        deleteWhatsAppFiles();
+        return { success: true, message: 'No active WhatsApp session to logout from (cleaned up files)' };
     }
 });

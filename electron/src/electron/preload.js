@@ -21,6 +21,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // WhatsApp methods
     startWhatsAppClient: () => ipcRenderer.invoke('whatsapp-start-client'),
+    logoutWhatsApp: () => ipcRenderer.invoke('whatsapp-logout'),
     sendWhatsAppMessages: (data) => ipcRenderer.invoke('whatsapp-send-messages', data),
     importWhatsAppContacts: () => ipcRenderer.invoke('whatsapp-import-contacts'),
     onWhatsAppStatus: (callback) => {

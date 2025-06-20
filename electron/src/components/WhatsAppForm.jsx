@@ -11,10 +11,14 @@ export default function WhatsAppForm({
 	waSending,
 	waResults,
 	startWhatsAppClient,
+	logoutWhatsApp,
 	importWhatsAppContacts,
 	sendWhatsAppBulk,
 }) {
 	const [logEntries, setLogEntries] = useState([]);
+	const [qrError, setQrError] = useState(false);
+	const [manualNumbers, setManualNumbers] = useState("");
+	const [showManualInput, setShowManualInput] = useState(false);
 
 	const addLogEntry = (message, type = "info") => {
 		const timestamp = new Date().toLocaleTimeString();
@@ -22,6 +26,116 @@ export default function WhatsAppForm({
 			...prev,
 			{ message, type, timestamp, id: Date.now() },
 		]);
+	};
+
+	const handleQrError = () => {
+		setQrError(true);
+		addLogEntry("Failed to load QR code image", "error");
+	};
+
+	const handleQrLoad = () => {
+		setQrError(false);
+	};
+
+	const processManualNumbers = async () => {
+		if (!manualNumbers.trim()) {
+			addLogEntry("Please enter some phone numbers", "error");
+			return;
+		}
+
+		try {
+			const response = await fetch(
+				"http://localhost:5034/parse-manual-numbers",
+				{
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({
+						numbers: manualNumbers,
+					}),
+				}
+			);
+
+			const result = await response.json();
+
+			if (result.success) {
+				setWaContacts((prevContacts) => [...prevContacts, ...result.contacts]);
+				addLogEntry(`Added ${result.count} contacts manually`, "success");
+				setManualNumbers("");
+				setShowManualInput(false);
+			} else {
+				addLogEntry(
+					result.error || "Failed to process manual numbers",
+					"error"
+				);
+			}
+		} catch (error) {
+			addLogEntry(`Error connecting to backend: ${error.message}`, "error");
+			// Fallback to basic parsing if backend is not available
+			fallbackParseNumbers();
+		}
+	};
+
+	const fallbackParseNumbers = () => {
+		const lines = manualNumbers.split("\n");
+		const newContacts = [];
+
+		lines.forEach((line) => {
+			line = line.trim();
+			if (line) {
+				// Basic phone number extraction
+				const phoneMatch = line.match(/[\+]?[\d\-\(\)\s]{7,}/);
+				if (phoneMatch) {
+					const phone = phoneMatch[0].replace(/[-\s\(\)]/g, "");
+					const name =
+						line.replace(phoneMatch[0], "").trim() ||
+						`Contact ${waContacts.length + newContacts.length + 1}`;
+					newContacts.push({
+						number: phone,
+						name: name,
+					});
+				}
+			}
+		});
+
+		if (newContacts.length > 0) {
+			setWaContacts((prevContacts) => [...prevContacts, ...newContacts]);
+			addLogEntry(
+				`Added ${newContacts.length} contacts manually (fallback mode)`,
+				"success"
+			);
+			setManualNumbers("");
+			setShowManualInput(false);
+		} else {
+			addLogEntry("No valid phone numbers found", "error");
+		}
+	};
+
+	const uploadFileToBackend = async (file) => {
+		const formData = new FormData();
+		formData.append("file", file);
+
+		try {
+			const response = await fetch("http://localhost:5034/upload", {
+				method: "POST",
+				body: formData,
+			});
+
+			const result = await response.json();
+
+			if (result.success) {
+				setWaContacts(result.contacts);
+				addLogEntry(`Imported ${result.count} contacts from file`, "success");
+				return result.contacts;
+			} else {
+				addLogEntry(result.error || "Failed to process file", "error");
+				return null;
+			}
+		} catch (error) {
+			addLogEntry(`Error connecting to backend: ${error.message}`, "error");
+			return null;
+		}
 	};
 
 	const getStatusColor = () => {
@@ -97,17 +211,74 @@ export default function WhatsAppForm({
 									</p>
 								</div>
 							</div>
-							<button
-								onClick={startWhatsAppClient}
-								disabled={waSending}
-								className="px-6 py-3 bg-gradient-to-r from-[#5865f2] to-[#4752c4] hover:from-[#4752c4] hover:to-[#3c45a3] disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:cursor-not-allowed flex items-center gap-2"
-							>
-								<WhatsAppIcon className="w-4 h-4" />
-								{waSending ? "Connecting..." : "Connect to WhatsApp"}
-							</button>
+							<div className="flex items-center gap-3">
+								{(waStatus.includes("ready") ||
+									waStatus.includes("Authenticated") ||
+									waStatus.includes("Client is ready")) && (
+									<button
+										onClick={logoutWhatsApp}
+										disabled={waSending}
+										className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl disabled:cursor-not-allowed flex items-center gap-2"
+									>
+										<div className="w-4 h-4">
+											<svg viewBox="0 0 24 24" fill="currentColor">
+												<path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.59L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" />
+											</svg>
+										</div>
+										Logout
+									</button>
+								)}
+								<button
+									onClick={startWhatsAppClient}
+									disabled={
+										waSending ||
+										waStatus.includes("ready") ||
+										waStatus.includes("Authenticated") ||
+										waStatus.includes("Client is ready")
+									}
+									className="px-6 py-3 bg-gradient-to-r from-[#5865f2] to-[#4752c4] hover:from-[#4752c4] hover:to-[#3c45a3] disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:cursor-not-allowed flex items-center gap-2"
+								>
+									<WhatsAppIcon className="w-4 h-4" />
+									{waSending
+										? "Connecting..."
+										: waStatus.includes("ready") ||
+										  waStatus.includes("Authenticated") ||
+										  waStatus.includes("Client is ready")
+										? "Connected"
+										: "Connect to WhatsApp"}
+								</button>
+							</div>
 						</div>
 
-						{/* QR Code Display */}
+						{/* QR Code Display / Loading */}
+						{(waStatus.includes("Initializing") ||
+							waStatus.includes("WhatsApp client initializing")) &&
+							!waQR && (
+								<div className="bg-gradient-to-br from-white/5 to-white/10 rounded-xl p-6 border border-white/10">
+									<div className="text-center">
+										<h4 className="text-white font-semibold mb-4">
+											Initializing WhatsApp Client
+										</h4>
+										<div className="flex justify-center mb-4">
+											<div className="relative">
+												<div className="w-16 h-16 border-4 border-[#25d366]/20 border-t-[#25d366] rounded-full animate-spin"></div>
+												<div className="absolute inset-0 flex items-center justify-center">
+													<WhatsAppIcon className="w-6 h-6 text-[#25d366]" />
+												</div>
+											</div>
+										</div>
+										<p className="text-gray-400 text-sm">
+											Please wait while we set up the WhatsApp connection...
+										</p>
+										<div className="mt-3">
+											<div className="text-xs text-gray-500">
+												Status: {waStatus}
+											</div>
+										</div>
+									</div>
+								</div>
+							)}
+
 						{waQR && (
 							<div className="bg-gradient-to-br from-white/5 to-white/10 rounded-xl p-6 border border-white/10">
 								<div className="text-center mb-4">
@@ -121,15 +292,67 @@ export default function WhatsAppForm({
 								</div>
 								<div className="flex justify-center">
 									<div className="bg-white p-4 rounded-2xl shadow-2xl">
-										<img
-											src={waQR}
-											alt="WhatsApp QR Code"
-											className="w-48 h-48 rounded-lg"
-										/>
+										{qrError ? (
+											<div className="w-48 h-48 rounded-lg bg-gray-100 flex flex-col items-center justify-center">
+												<div className="text-gray-500 text-center">
+													<div className="text-lg mb-2">⚠️</div>
+													<p className="text-sm">QR Code Failed to Load</p>
+													<p className="text-xs mt-1">
+														Check console for details
+													</p>
+												</div>
+											</div>
+										) : (
+											<img
+												src={waQR}
+												alt="WhatsApp QR Code"
+												className="w-48 h-48 rounded-lg"
+												onError={handleQrError}
+												onLoad={handleQrLoad}
+											/>
+										)}
 									</div>
 								</div>
+								{qrError && (
+									<div className="text-center mt-4">
+										<button
+											onClick={() => {
+												setQrError(false);
+												startWhatsAppClient();
+											}}
+											className="px-4 py-2 bg-[#5865f2] text-white rounded-lg text-sm hover:bg-[#4752c4] transition-colors"
+										>
+											Retry Connection
+										</button>
+									</div>
+								)}
 							</div>
 						)}
+
+						{/* Success Message when authenticated */}
+						{!waQR &&
+							(waStatus.includes("ready") ||
+								waStatus.includes("Authenticated") ||
+								waStatus.includes("Client is ready")) && (
+								<div className="bg-gradient-to-br from-green-500/10 to-green-600/10 rounded-xl p-6 border border-green-500/20">
+									<div className="text-center">
+										<div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+											<CheckIcon className="w-8 h-8 text-white" />
+										</div>
+										<h4 className="text-white font-semibold mb-2">
+											WhatsApp Connected Successfully!
+										</h4>
+										<p className="text-gray-400 text-sm">
+											Your WhatsApp is now connected and ready to send messages.
+										</p>
+										<div className="mt-3">
+											<div className="text-xs text-green-400">
+												Status: {waStatus}
+											</div>
+										</div>
+									</div>
+								</div>
+							)}
 					</div>
 
 					{/* Contact Management */}
@@ -142,21 +365,79 @@ export default function WhatsAppForm({
 								<div>
 									<h3 className="text-lg font-semibold text-white">Contacts</h3>
 									<p className="text-sm text-gray-400">
-										Import your contact list
+										Import your contact list or add manually
 									</p>
 								</div>
 							</div>
-							<button
-								onClick={importWhatsAppContacts}
-								disabled={waSending}
-								className="px-6 py-3 bg-gradient-to-r from-[#23a55a] to-[#1e8e4f] hover:from-[#1e8e4f] hover:to-[#198a47] disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:cursor-not-allowed flex items-center gap-2"
-							>
-								<FolderIcon className="w-4 h-4" />
-								Import Contacts
-							</button>
+							<div className="flex gap-3">
+								<button
+									onClick={() => setShowManualInput(!showManualInput)}
+									disabled={waSending}
+									className="px-6 py-3 bg-gradient-to-r from-[#5865f2] to-[#4752c4] hover:from-[#4752c4] hover:to-[#3c45a3] disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:cursor-not-allowed flex items-center gap-2"
+								>
+									<span className="text-sm">📝</span>
+									Add Manually
+								</button>
+								<button
+									onClick={importWhatsAppContacts}
+									disabled={waSending}
+									className="px-6 py-3 bg-gradient-to-r from-[#23a55a] to-[#1e8e4f] hover:from-[#1e8e4f] hover:to-[#198a47] disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:cursor-not-allowed flex items-center gap-2"
+								>
+									<FolderIcon className="w-4 h-4" />
+									Import File
+								</button>
+							</div>
 						</div>
 
-						<div className="grid grid-cols-2 gap-4 mb-4">
+						{/* Manual Number Input */}
+						{showManualInput && (
+							<div className="mb-6 bg-[#313338] rounded-lg p-4 border border-[#404249]">
+								<div className="text-sm text-gray-400 mb-3">
+									Enter phone numbers manually (one per line). You can also
+									include names:
+								</div>
+								<div className="text-xs text-gray-500 mb-3 space-y-1">
+									<div>• Format: +1234567890</div>
+									<div>• With name: John Doe: +1234567890</div>
+									<div>• Or: +1234567890 - John Doe</div>
+								</div>
+								<textarea
+									value={manualNumbers}
+									onChange={(e) => setManualNumbers(e.target.value)}
+									placeholder="Enter phone numbers here...&#10;+1234567890&#10;John Doe: +0987654321&#10;+1111222333 - Jane Smith"
+									className="w-full h-32 px-3 py-2 bg-[#2b2d31] border border-[#404249] rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-[#5865f2] focus:ring-2 focus:ring-[#5865f2]/20 resize-none"
+								/>
+								<div className="flex justify-between items-center mt-3">
+									<div className="text-xs text-gray-500">
+										{
+											manualNumbers.split("\n").filter((line) => line.trim())
+												.length
+										}{" "}
+										numbers entered
+									</div>
+									<div className="flex gap-2">
+										<button
+											onClick={() => {
+												setManualNumbers("");
+												setShowManualInput(false);
+											}}
+											className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm transition-colors"
+										>
+											Cancel
+										</button>
+										<button
+											onClick={processManualNumbers}
+											disabled={!manualNumbers.trim() || waSending}
+											className="px-4 py-2 bg-[#5865f2] hover:bg-[#4752c4] disabled:bg-gray-600 text-white rounded-lg text-sm transition-colors disabled:cursor-not-allowed"
+										>
+											Add Numbers
+										</button>
+									</div>
+								</div>
+							</div>
+						)}
+
+						<div className="grid grid-cols-3 gap-4 mb-4">
 							<div className="bg-[#313338] rounded-lg p-4 border border-[#404249]">
 								<div className="text-xs text-gray-400 uppercase tracking-wide mb-1">
 									Contacts Loaded
@@ -170,8 +451,22 @@ export default function WhatsAppForm({
 									File Status
 								</div>
 								<div className="text-sm font-semibold text-white">
-									{waContacts.length > 0 ? "Ready" : "No file selected"}
+									{waContacts.length > 0 ? "Ready" : "No contacts"}
 								</div>
+							</div>
+							<div className="bg-[#313338] rounded-lg p-4 border border-[#404249] flex items-center justify-center">
+								{waContacts.length > 0 && (
+									<button
+										onClick={() => {
+											setWaContacts([]);
+											addLogEntry("Cleared all contacts", "info");
+										}}
+										disabled={waSending}
+										className="px-3 py-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white rounded text-sm transition-colors disabled:cursor-not-allowed"
+									>
+										Clear All
+									</button>
+								)}
 							</div>
 						</div>
 

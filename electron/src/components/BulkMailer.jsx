@@ -306,7 +306,7 @@ export default function BulkMailer() {
 		}
 	};
 
-	const importWhatsAppContacts = async () => {
+	const logoutWhatsApp = async () => {
 		try {
 			// Check if electronAPI is available
 			if (!window.electronAPI) {
@@ -316,23 +316,90 @@ export default function BulkMailer() {
 				return;
 			}
 
-			if (!window.electronAPI.importWhatsAppContacts) {
+			if (!window.electronAPI.logoutWhatsApp) {
 				alert(
-					"Import WhatsApp contacts function not available. Please check Electron configuration."
+					"Logout WhatsApp function not available. Please check Electron configuration."
 				);
 				return;
 			}
 
-			const contacts = await window.electronAPI.importWhatsAppContacts();
-			if (contacts && Array.isArray(contacts)) {
-				setWaContacts(contacts);
-				alert(`Successfully imported ${contacts.length} contacts.`);
-			} else if (contacts === null) {
-				// User cancelled the dialog
-				return;
+			const result = await window.electronAPI.logoutWhatsApp();
+			if (result.success) {
+				setWaContacts([]);
+				setWaResults([]);
+				setWaQR(null);
+				setWaStatus("Disconnected");
+				alert("Successfully logged out from WhatsApp");
 			} else {
-				alert("No valid contacts found in the selected file.");
+				alert(`Logout failed: ${result.message}`);
 			}
+		} catch (error) {
+			console.error("Error logging out from WhatsApp:", error);
+			alert(`Error logging out from WhatsApp: ${error.message}`);
+		}
+	};
+
+	const importWhatsAppContacts = async () => {
+		try {
+			// Use HTML file input to get file
+			const input = document.createElement("input");
+			input.type = "file";
+			input.accept = ".txt,.csv,.xlsx,.xls";
+
+			return new Promise((resolve) => {
+				input.onchange = async (event) => {
+					const file = event.target.files[0];
+					if (!file) {
+						resolve();
+						return;
+					}
+
+					try {
+						// Upload file to Python backend
+						const formData = new FormData();
+						formData.append("file", file);
+
+						const response = await fetch("http://localhost:5034/upload", {
+							method: "POST",
+							body: formData,
+						});
+
+						const result = await response.json();
+
+						if (result.success) {
+							setWaContacts(result.contacts);
+							alert(
+								`Successfully imported ${result.count} contacts from ${file.name}.`
+							);
+						} else {
+							throw new Error(result.error || "Failed to process file");
+						}
+					} catch (error) {
+						console.error("Error importing WhatsApp contacts:", error);
+						alert(`Error importing WhatsApp contacts: ${error.message}`);
+
+						// Fallback to Electron file handling if Python backend is not available
+						try {
+							if (window.electronAPI?.importWhatsAppContacts) {
+								const contacts =
+									await window.electronAPI.importWhatsAppContacts();
+								if (contacts && Array.isArray(contacts)) {
+									setWaContacts(contacts);
+									alert(
+										`Successfully imported ${contacts.length} contacts (fallback mode).`
+									);
+								}
+							}
+						} catch (fallbackError) {
+							console.error("Fallback import also failed:", fallbackError);
+						}
+					}
+
+					resolve();
+				};
+
+				input.click();
+			});
 		} catch (error) {
 			console.error("Error importing WhatsApp contacts:", error);
 			alert(`Error importing WhatsApp contacts: ${error.message}`);
@@ -405,6 +472,7 @@ export default function BulkMailer() {
 							waSending={waSending}
 							waResults={waResults}
 							startWhatsAppClient={startWhatsAppClient}
+							logoutWhatsApp={logoutWhatsApp}
 							importWhatsAppContacts={importWhatsAppContacts}
 							sendWhatsAppBulk={sendWhatsAppBulk}
 						/>

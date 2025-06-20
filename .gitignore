@@ -14,3 +14,7 @@ test2.py
 .github
 
 .wwebjs_auth
+.wwebjs_cache
+
+.DS_Store
+uploads/
