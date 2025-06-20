@@ -24,7 +24,7 @@ const WhatsAppIcon = () => (
 );
 export default function Sidebar({ activeTab, setActiveTab }) {
 	return (
-		<aside className="w-20 flex flex-col items-center py-6 bg-[#23272a] shadow-lg border-r border-[#23272a]">
+		<aside className="w-20 gap-5 flex flex-col items-center py-6 bg-[#23272a] shadow-lg border-r border-[#23272a]">
 			{/* App Icon */}
 			<div className="mb-8">
 				<div className="w-12 h-12 bg-[#5865f2] rounded-2xl flex items-center justify-center shadow-lg">

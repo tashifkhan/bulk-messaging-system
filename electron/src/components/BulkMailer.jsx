@@ -1,9 +1,6 @@
 import { useState, useEffect } from "react";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
-import WhatsAppForm from "./WhatsAppForm";
-import GmailForm from "./GmailForm";
-import SMTPForm from "./SMTPForm";
 import {
 	GmailIcon,
 	ServerIcon,
@@ -261,43 +258,7 @@ export default function BulkMailer() {
 			<main className="flex-1 flex flex-col bg-gradient-to-br from-[#36393f] via-[#23272a] to-[#23272a]">
 				<TopBar activeTab={activeTab} />
 				<section className="flex-1 overflow-y-auto p-6 md:p-10 flex flex-col items-center">
-					<div className="w-full max-w-4xl space-y-8">
-						{activeTab === "whatsapp" && <WhatsAppForm />}
-						{activeTab === "gmail" && (
-							<GmailForm
-								isGmailAuthenticated={isGmailAuthenticated}
-								authenticateGmail={checkGmailAuth}
-								subject={subject}
-								setSubject={setSubject}
-								emailList={emailList}
-								setEmailList={setEmailList}
-								message={message}
-								setMessage={setMessage}
-								delay={delay}
-								setDelay={setDelay}
-								importEmailList={importEmailList}
-								sendGmailBulk={sendGmailBulk}
-								isSending={isSending}
-							/>
-						)}
-						{activeTab === "smtp" && (
-							<SMTPForm
-								smtpConfig={smtpConfig}
-								setSMTPConfig={setSMTPConfig}
-								message={message}
-								setMessage={setMessage}
-								subject={subject}
-								setSubject={setSubject}
-								emailList={emailList}
-								setEmailList={setEmailList}
-								delay={delay}
-								setDelay={setDelay}
-								importEmailList={importEmailList}
-								sendSMTPBulk={sendSMTPBulk}
-								isSending={isSending}
-							/>
-						)}
-					</div>
+					<div className="w-full max-w-4xl space-y-8"></div>
 				</section>
 			</main>
 		</div>
