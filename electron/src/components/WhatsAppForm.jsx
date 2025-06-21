@@ -62,28 +62,6 @@ export default function WhatsAppForm({
 		}
 	};
 
-	const uploadFileToProcessor = async (file) => {
-		try {
-			const processor = new ContactProcessor({ cleanupUploadedFile: false });
-			const ext = file.name.split(".").pop().toLowerCase();
-			let contacts = [];
-			if (ext === "csv") {
-				const text = await file.text();
-				contacts = await processor.extractContactsFromCsvText(text);
-			} else if (ext === "txt") {
-				const text = await file.text();
-				contacts = processor.extractContactsFromTxtText(text);
-			} else if (["xlsx", "xls"].includes(ext)) {
-				const arrayBuffer = await file.arrayBuffer();
-				contacts = processor.extractContactsFromExcelArrayBuffer(arrayBuffer);
-			}
-			return contacts;
-		} catch (error) {
-			addLogEntry(`Error processing file: ${error.message}`, "error");
-			return null;
-		}
-	};
-
 	const getStatusColor = () => {
 		if (waStatus.includes("ready") || waStatus.includes("Authenticated")) {
 			return "text-green-400";

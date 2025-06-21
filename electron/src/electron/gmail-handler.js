@@ -1,3 +1,4 @@
+/* global process, Buffer */
 import 'dotenv/config';
 import { google } from 'googleapis';
 import Store from 'electron-store';

@@ -122,7 +122,7 @@ class ContactProcessor {
     const nameCol = cols.find(c =>
       this.config.columnPatterns.name.some(rx => rx.test(c))
     ) || cols[1] || null;
-    rows.forEach((row, idx) => {
+    rows.forEach((row) => {
       const phone = this.cleanPhoneNumber(row[phoneCol]);
       if (!phone) return;
       let name = nameCol && row[nameCol] ? String(row[nameCol]).trim() : null;

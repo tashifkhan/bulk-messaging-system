@@ -17,16 +17,6 @@ export default function SMTPForm({
 	importEmailList,
 	sendSMTPBulk,
 }) {
-	const [logEntries, setLogEntries] = useState([]);
-
-	const addLogEntry = (message, type = "info") => {
-		const timestamp = new Date().toLocaleTimeString();
-		setLogEntries((prev) => [
-			...prev,
-			{ message, type, timestamp, id: Date.now() },
-		]);
-	};
-
 	const recipientCount = emailList
 		.split("\n")
 		.filter((email) => email.trim()).length;
@@ -343,7 +333,7 @@ email3@example.com"
 						</div>
 
 						<div className="flex-1 bg-[#313338] rounded-lg border border-[#404249] overflow-hidden">
-							{results.length === 0 && logEntries.length === 0 ? (
+							{results.length === 0 ? (
 								<div className="h-full flex flex-col items-center justify-center text-gray-500">
 									<div className="w-16 h-16 bg-[#404249] rounded-full flex items-center justify-center mb-4">
 										<div className="w-8 h-8 border-2 border-gray-500 border-dashed rounded-full"></div>
@@ -384,44 +374,6 @@ email3@example.com"
 													>
 														{result.email} - {result.status}
 														{result.error && ` (${result.error})`}
-													</div>
-												</div>
-											</div>
-										))}
-
-										{/* Display log entries */}
-										{logEntries.map((entry) => (
-											<div
-												key={entry.id}
-												className="flex items-start gap-3 p-3 rounded-lg bg-[#2b2d31] border border-[#404249]"
-											>
-												<div
-													className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
-														entry.type === "success"
-															? "bg-green-400"
-															: entry.type === "error"
-															? "bg-red-400"
-															: entry.type === "warning"
-															? "bg-yellow-400"
-															: "bg-gray-400"
-													}`}
-												></div>
-												<div className="flex-1 min-w-0">
-													<div className="text-xs text-gray-400 mb-1">
-														{entry.timestamp}
-													</div>
-													<div
-														className={`text-sm ${
-															entry.type === "success"
-																? "text-green-400"
-																: entry.type === "error"
-																? "text-red-400"
-																: entry.type === "warning"
-																? "text-yellow-400"
-																: "text-gray-300"
-														}`}
-													>
-														{entry.message}
 													</div>
 												</div>
 											</div>

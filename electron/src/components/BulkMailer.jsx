@@ -110,10 +110,6 @@ export default function BulkMailer() {
 		}
 	};
 
-	const handleProgress = (event, progressData) => {
-		setProgress(progressData);
-	};
-
 	const importEmailList = async () => {
 		try {
 			// Check if electronAPI is available
