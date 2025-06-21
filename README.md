@@ -229,6 +229,9 @@ WhatsappBulkMessaging/
 ├── localhost/                  # Local development utilities
 │   ├── app.py                  # Local server
 │   └── cli_functions.py        # Command-line functions
+├── .github/workflows/          # GitHub Actions workflows
+│   ├── ci.yml                  # Continuous Integration
+│   └── release.yml             # Release automation
 └── README.md                   # This file
 ```
 
@@ -277,6 +280,55 @@ python parse_manual_numbers.py
 3. **State Management**: Use React useState and useEffect
 4. **Error Handling**: Implement proper error boundaries
 5. **Security**: Never expose sensitive data in renderer process
+
+## Continuous Integration and Deployment
+
+### GitHub Actions
+
+The project includes automated workflows for testing and releasing:
+
+#### CI Workflow (`.github/workflows/ci.yml`)
+
+- Runs on every push to main/develop and pull requests
+- Tests code linting and building
+- Creates Linux build artifacts for testing
+- Ensures code quality before merging
+
+#### Release Workflow (`.github/workflows/release.yml`)
+
+- Triggers on version tags (e.g., `v1.0.0`)
+- Builds for all platforms (Windows, macOS, Linux)
+- Creates GitHub releases with built artifacts
+- Generates release notes automatically
+
+### Creating a Release
+
+1. **Update version in package.json:**
+
+```bash
+cd electron
+npm version patch  # or minor/major
+```
+
+2. **Push the tag:**
+
+```bash
+git push origin main --tags
+```
+
+3. **GitHub Actions will automatically:**
+   - Build for all platforms
+   - Create a new release
+   - Upload distributable files
+   - Generate release notes
+
+### Release Artifacts
+
+Each release includes:
+
+- **Windows**: `.exe` installer
+- **macOS**: `.dmg` disk image
+- **Linux**: `.AppImage`, `.deb`, `.rpm`, `.snap` packages
 
 ## Security Features
 
