@@ -36,9 +36,6 @@ export default function BulkMailer() {
 		// Check Gmail authentication status
 		checkGmailAuth();
 
-		// Setup progress listener
-		const removeListener = window.electronAPI?.onProgress?.(handleProgress);
-
 		// WhatsApp status listener
 		const removeWaStatus = window.electronAPI?.onWhatsAppStatus?.((_, status) =>
 			setWaStatus(status)
@@ -54,7 +51,6 @@ export default function BulkMailer() {
 		);
 
 		return () => {
-			if (removeListener) removeListener();
 			if (removeWaStatus) removeWaStatus();
 			if (removeWaQR) removeWaQR();
 			if (removeWaSendStatus) removeWaSendStatus();

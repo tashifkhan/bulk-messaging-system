@@ -334,8 +334,8 @@ const deleteWhatsAppFiles = () => {
             fs.rmSync(authDir, { recursive: true, force: true });
             console.log('Deleted .wwebjs_auth directory');
         }
-    } catch (error) {
-        console.error('Error deleting WhatsApp files:', error);
+    } catch {
+        console.error('Error deleting WhatsApp files');
     }
 };
 

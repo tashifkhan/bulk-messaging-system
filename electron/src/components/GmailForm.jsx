@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { GmailIcon, FolderIcon, SendIcon, CheckIcon, LockIcon } from "./Icons";
 
 export default function GmailForm({

@@ -130,14 +130,14 @@ class ContactProcessor extends EventEmitter {
       let nameCand = null;
 
       parts.forEach(p => {
-        if (!phoneCand && /[\d+\-\(\)\s]{7,}/.test(p)) {
+        if (!phoneCand && /[\d+\-()\s]{7,}/.test(p)) {
           phoneCand = p;
         } else if (!nameCand && p) {
           nameCand = p;
         }
       });
       if (!phoneCand) {
-        const m = L.match(/[\+]?[\d\-\(\)\s]{7,}/);
+        const m = L.match(/[+]?[\d\-()\s]{7,}/);
         if (m) {
           phoneCand = m[0];
           nameCand = L.replace(m[0], "").trim();
@@ -230,10 +230,10 @@ class ContactProcessor extends EventEmitter {
       let phone, name;
       if (parts.length === 2) {
         const [a, b] = parts;
-        if (/[\d+\-\(\)\s]{7,}/.test(b)) {
+        if (/[\d+\-()\s]{7,}/.test(b)) {
           phone = this.cleanPhoneNumber(b);
           name = a;
-        } else if (/[\d+\-\(\)\s]{7,}/.test(a)) {
+        } else if (/[\d+\-()\s]{7,}/.test(a)) {
           phone = this.cleanPhoneNumber(a);
           name = b;
         } else {
