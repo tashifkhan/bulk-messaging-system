@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { google } from 'googleapis';
 import Store from 'electron-store';
 import { BrowserWindow } from 'electron';
@@ -12,22 +13,14 @@ let oauth2Client = null;
 
 export async function handleGmailAuth() {
     try {
-        // You'll need to set up OAuth2 credentials in Google Cloud Console
-        // For now, we'll return instructions for the user
-        return {
-            success: false,
-            message: 'Please set up Google OAuth2 credentials in Google Cloud Console',
-            instructions: [
-                '1. Go to Google Cloud Console',
-                '2. Create a new project or select existing one',
-                '3. Enable Gmail API',
-                '4. Create OAuth2 credentials',
-                '5. Add your credentials to the app'
-            ]
-        };
-        
-        // Uncomment and configure when you have OAuth2 credentials:
-        /*
+        // Check for credentials
+        if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+            return {
+                success: false,
+                error: 'Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET in environment.'
+            };
+        }
+
         oauth2Client = new google.auth.OAuth2(
             process.env.GOOGLE_CLIENT_ID,
             process.env.GOOGLE_CLIENT_SECRET,
@@ -56,7 +49,7 @@ export async function handleGmailAuth() {
                 if (url.startsWith(REDIRECT_URI)) {
                     const urlParams = new URL(url);
                     const code = urlParams.searchParams.get('code');
-                    
+
                     if (code) {
                         oauth2Client.getToken(code, (err, token) => {
                             if (err) {
@@ -67,12 +60,13 @@ export async function handleGmailAuth() {
                                 resolve({ success: true });
                             }
                         });
+                    } else {
+                        resolve({ success: false, error: 'No code returned from Google.' });
                     }
                     authWindow.close();
                 }
             });
         });
-        */
     } catch (error) {
         return { success: false, error: error.message };
     }

@@ -98,7 +98,11 @@ export default function BulkMailer() {
 				setIsGmailAuthenticated(true);
 				alert("Gmail authentication successful!");
 			} else {
-				alert(`Gmail authentication failed: ${result.error}`);
+				alert(
+					`Gmail authentication failed: ${
+						result.error || result.message || "Unknown error"
+					}`
+				);
 			}
 		} catch (error) {
 			console.error("Error authenticating Gmail:", error);
