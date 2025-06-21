@@ -254,7 +254,7 @@ ipcMain.handle('whatsapp-import-contacts', async () => {
             } else {
                 throw new Error('Unsupported file type');
             }
-        } catch (error) {
+        } catch {
             return [];
         }
     }
