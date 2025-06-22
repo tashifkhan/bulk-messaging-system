@@ -4,7 +4,7 @@ import TopBar from "./TopBar";
 import WhatsAppForm from "./WhatsAppForm";
 import GmailForm from "./GmailForm";
 import SMTPForm from "./SMTPForm";
-import ContactProcessor from "../utils/contactProcessor.browser.js";
+import { parseManualNumbers } from "../utils/pyodide.js";
 
 export default function BulkMailer() {
 	const [activeTab, setActiveTab] = useState("whatsapp");
@@ -333,19 +333,15 @@ export default function BulkMailer() {
 						return;
 					}
 					try {
-						const processor = new ContactProcessor();
 						const ext = file.name.split(".").pop().toLowerCase();
 						let contacts = [];
-						if (ext === "csv") {
+						if (ext === "csv" || ext === "txt") {
 							const text = await file.text();
-							contacts = await processor.extractContactsFromCsvText(text);
-						} else if (ext === "txt") {
-							const text = await file.text();
-							contacts = processor.extractContactsFromTxtText(text);
+							const result = await parseManualNumbers(text);
+							contacts = result.contacts || [];
 						} else if (["xlsx", "xls"].includes(ext)) {
-							const arrayBuffer = await file.arrayBuffer();
-							contacts =
-								processor.extractContactsFromExcelArrayBuffer(arrayBuffer);
+							alert("Excel import not yet supported in this version.");
+							contacts = [];
 						}
 						if (contacts.length) {
 							setWaContacts(contacts);

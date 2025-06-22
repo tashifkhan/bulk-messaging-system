@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { WhatsAppIcon, FolderIcon, SendIcon, CheckIcon } from "./Icons";
-import ContactProcessor from "../utils/contactProcessor.browser.js";
+import { parseManualNumbers } from "../utils/pyodide.js";
 
 export default function WhatsAppForm({
 	waContacts,
@@ -44,8 +44,7 @@ export default function WhatsAppForm({
 			return;
 		}
 		try {
-			const processor = new ContactProcessor();
-			const result = processor.parseManualNumbers(manualNumbers);
+			const result = await parseManualNumbers(manualNumbers);
 			if (result.success) {
 				setWaContacts((prevContacts) => [...prevContacts, ...result.contacts]);
 				addLogEntry(`Added ${result.count} contacts manually`, "success");
