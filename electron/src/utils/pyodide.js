@@ -26,7 +26,7 @@ export async function loadPyodideAndScript() {
 export async function parseManualNumbers(numbersText) {
   await loadPyodideAndScript();
   // Escape triple quotes and backslashes for safe Python string
-  const safeText = numbersText.replace(/\\/g, '\\\\').replace(/"""/g, '\"\"\"');
+  const safeText = numbersText.replace(/\\/g, '\\\\').replace(/"""/g, '"""');
   const pyCode = `import json\nresult = parse_manual_numbers("""${safeText}""")\njson.dumps(result)`;
   const resultJson = await pyodide.runPythonAsync(pyCode);
   return JSON.parse(resultJson);
