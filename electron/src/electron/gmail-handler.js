@@ -3,45 +3,106 @@ import 'dotenv/config';
 import { google } from 'googleapis';
 import Store from 'electron-store';
 import { BrowserWindow } from 'electron';
+import http from 'http';
+import fs from 'fs';
+import path from 'path';
 
 const store = new Store();
 
 // Gmail OAuth2 configuration
 const GMAIL_SCOPES = ['https://www.googleapis.com/auth/gmail.send'];
-const REDIRECT_URI = 'http://localhost:3000/oauth/callback';
+const DEFAULT_REDIRECT_URI = 'http://localhost:3000/oauth/callback';
 
 let oauth2Client = null;
 
+function getGoogleCredentials() {
+    const credentialsPath = process.env.GOOGLE_CREDENTIALS_PATH || path.join(process.cwd(), 'google-credentials.json');
+    let fileCredentials = null;
+
+    if (fs.existsSync(credentialsPath)) {
+        const parsed = JSON.parse(fs.readFileSync(credentialsPath, 'utf8'));
+        fileCredentials = parsed.installed || parsed.web || parsed;
+    }
+
+    const clientId = process.env.GOOGLE_CLIENT_ID || fileCredentials?.client_id;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET || fileCredentials?.client_secret;
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI || DEFAULT_REDIRECT_URI;
+
+    return { clientId, clientSecret, redirectUri };
+}
+
+function createOAuthClient() {
+    const { clientId, clientSecret, redirectUri } = getGoogleCredentials();
+
+    if (!clientId || !clientSecret) {
+        throw new Error('Missing Google OAuth credentials. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET, or add google-credentials.json in the electron folder.');
+    }
+
+    return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
+}
+
+function getFriendlyOAuthError(error) {
+    const code = error?.code || error?.status;
+    const apiError = error?.response?.data?.error;
+    const apiDescription = error?.response?.data?.error_description;
+
+    if (apiError === 'invalid_client' || String(error?.message || '').includes('invalid_client')) {
+        return 'Google rejected the OAuth credentials. The GOOGLE_CLIENT_SECRET does not match GOOGLE_CLIENT_ID. Download a fresh OAuth Client JSON from Google Cloud Console and save it as electron/google-credentials.json, or update the values in electron/.env.';
+    }
+
+    if (apiError === 'redirect_uri_mismatch') {
+        return 'Google rejected the redirect URI. Add http://localhost:3000/oauth/callback to the OAuth client redirect URIs, or set GOOGLE_REDIRECT_URI to the value configured in Google Cloud Console.';
+    }
+
+    if (apiDescription) return apiDescription;
+    if (code) return `Google OAuth failed with status ${code}.`;
+    return error?.message || 'Google OAuth failed.';
+}
+
+function startOAuthCallbackServer(redirectUri, onCallback) {
+    const redirectUrl = new URL(redirectUri);
+
+    if (!['localhost', '127.0.0.1'].includes(redirectUrl.hostname)) {
+        return Promise.resolve(null);
+    }
+
+    return new Promise((resolve) => {
+        const server = http.createServer((req, res) => {
+            const requestUrl = new URL(req.url, redirectUri);
+
+            if (requestUrl.pathname !== redirectUrl.pathname) {
+                res.writeHead(404);
+                res.end('Not found');
+                return;
+            }
+
+            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+            res.end('<html><body><h2>Authentication received.</h2><p>You can close this window and return to the app.</p></body></html>');
+            onCallback(requestUrl);
+        });
+
+        server.once('error', () => resolve(null));
+        server.listen(Number(redirectUrl.port || 80), redirectUrl.hostname, () => resolve(server));
+    });
+}
+
+function safeCloseWindow(window) {
+    if (window && !window.isDestroyed()) {
+        window.close();
+    }
+}
+
 export async function handleGmailAuth() {
     try {
-        console.log('Starting Gmail authentication...');
-        
-        // Check for credentials
-        if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-            console.error('Missing environment variables:', {
-                hasClientId: !!process.env.GOOGLE_CLIENT_ID,
-                hasClientSecret: !!process.env.GOOGLE_CLIENT_SECRET
-            });
-            return {
-                success: false,
-                error: 'Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET in environment.'
-            };
-        }
-
-        console.log('Creating OAuth2 client...');
-        oauth2Client = new google.auth.OAuth2(
-            process.env.GOOGLE_CLIENT_ID,
-            process.env.GOOGLE_CLIENT_SECRET,
-            REDIRECT_URI
-        );
+        console.log('Starting Gmail authentication');
+        const { redirectUri } = getGoogleCredentials();
+        oauth2Client = createOAuthClient();
 
         const authUrl = oauth2Client.generateAuthUrl({
             access_type: 'offline',
             scope: GMAIL_SCOPES,
             prompt: 'consent' // Force consent screen to get refresh token
         });
-
-        console.log('Generated auth URL:', authUrl);
 
         // Open auth URL in browser window
         const authWindow = new BrowserWindow({
@@ -62,70 +123,73 @@ export async function handleGmailAuth() {
 
         return new Promise((resolve) => {
             let hasResolved = false;
+            let callbackServer = null;
+            let timeout = null;
 
-            const timeout = setTimeout(() => {
-                if (!hasResolved) {
-                    hasResolved = true;
-                    authWindow.close();
-                    resolve({ success: false, error: 'Authentication timeout. Please try again.' });
+            const finish = async (result) => {
+                if (hasResolved) return;
+                hasResolved = true;
+                clearTimeout(timeout);
+
+                if (callbackServer) {
+                    callbackServer.close();
                 }
+
+                safeCloseWindow(authWindow);
+                resolve(result);
+            };
+
+            const handleCallbackUrl = async (callbackUrl) => {
+                const code = callbackUrl.searchParams.get('code');
+                const error = callbackUrl.searchParams.get('error');
+
+                if (error) {
+                    await finish({ success: false, error: `Google OAuth error: ${error}` });
+                    return;
+                }
+
+                if (!code) {
+                    await finish({ success: false, error: 'No authorization code received from Google.' });
+                    return;
+                }
+
+                try {
+                    console.log('Google authorization code received; exchanging for token');
+                    const { tokens } = await oauth2Client.getToken(code);
+                    oauth2Client.setCredentials(tokens);
+                    store.set('gmail_token', tokens);
+                    await finish({ success: true });
+                } catch (tokenError) {
+                    console.error('Google token exchange failed:', getFriendlyOAuthError(tokenError));
+                    await finish({ success: false, error: getFriendlyOAuthError(tokenError) });
+                }
+            };
+
+            timeout = setTimeout(() => {
+                finish({ success: false, error: 'Authentication timeout. Please try again.' });
             }, 300000); // 5 minutes timeout
 
+            startOAuthCallbackServer(redirectUri, handleCallbackUrl).then((server) => {
+                callbackServer = server;
+            });
+
             authWindow.webContents.on('will-redirect', (event, url) => {
-                console.log('Redirect detected:', url);
-                
-                if (url.startsWith(REDIRECT_URI)) {
-                    clearTimeout(timeout);
-                    
-                    if (!hasResolved) {
-                        hasResolved = true;
-                        
-                        const urlParams = new URL(url);
-                        const code = urlParams.searchParams.get('code');
-                        const error = urlParams.searchParams.get('error');
+                const redirectTarget = new URL(url);
+                console.log('Google OAuth redirect:', `${redirectTarget.origin}${redirectTarget.pathname}`);
 
-                        if (error) {
-                            console.error('OAuth error:', error);
-                            authWindow.close();
-                            resolve({ success: false, error: `OAuth error: ${error}` });
-                            return;
-                        }
-
-                        if (code) {
-                            console.log('Got authorization code, exchanging for token...');
-                            oauth2Client.getToken(code, (err, token) => {
-                                if (err) {
-                                    console.error('Token exchange error:', err);
-                                    authWindow.close();
-                                    resolve({ success: false, error: err.message });
-                                } else {
-                                    console.log('Token received successfully');
-                                    oauth2Client.setCredentials(token);
-                                    store.set('gmail_token', token);
-                                    authWindow.close();
-                                    resolve({ success: true });
-                                }
-                            });
-                        } else {
-                            console.error('No authorization code received');
-                            authWindow.close();
-                            resolve({ success: false, error: 'No authorization code received from Google.' });
-                        }
-                    }
+                if (url.startsWith(redirectUri)) {
+                    event.preventDefault();
+                    handleCallbackUrl(redirectTarget);
                 }
             });
 
             authWindow.on('closed', () => {
-                if (!hasResolved) {
-                    hasResolved = true;
-                    clearTimeout(timeout);
-                    resolve({ success: false, error: 'Authentication window was closed.' });
-                }
+                finish({ success: false, error: 'Authentication window was closed.' });
             });
         });
     } catch (error) {
-        console.error('Gmail auth error:', error);
-        return { success: false, error: error.message };
+        console.error('Gmail auth error:', getFriendlyOAuthError(error));
+        return { success: false, error: getFriendlyOAuthError(error) };
     }
 }
 
@@ -149,11 +213,7 @@ export async function handleSendEmail(event, emailData) {
 
         // Set up OAuth2 client with stored token
         if (!oauth2Client) {
-            oauth2Client = new google.auth.OAuth2(
-                process.env.GOOGLE_CLIENT_ID,
-                process.env.GOOGLE_CLIENT_SECRET,
-                REDIRECT_URI
-            );
+            oauth2Client = createOAuthClient();
         }
         oauth2Client.setCredentials(token);
 

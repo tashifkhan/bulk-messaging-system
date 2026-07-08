@@ -9,13 +9,67 @@ import pkg from 'whatsapp-web.js'
 const { Client, LocalAuth } = pkg
 import QRCode from 'qrcode'
 import fs from 'fs'
-import csv from 'csv-parser'
+import Store from 'electron-store'
+import {
+    parseEmailsFromCsv,
+    parseEmailsFromText,
+    parseCsvHeaders,
+} from '../shared/contact-parser.js'
+
+const store = new Store();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 let mainWindow;
 let whatsappClient;
+
+function getBrowserExecutablePath() {
+    const explicitPath = process.env.PUPPETEER_EXECUTABLE_PATH;
+    const candidatePaths = [
+        explicitPath,
+        '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+        '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser',
+        '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+        '/Applications/Chromium.app/Contents/MacOS/Chromium',
+        '/usr/bin/google-chrome-stable',
+        '/usr/bin/google-chrome',
+        '/usr/bin/chromium-browser',
+        '/usr/bin/chromium',
+        'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+        'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+        'C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe',
+    ].filter(Boolean);
+
+    return candidatePaths.find((candidatePath) => fs.existsSync(candidatePath));
+}
+
+function formatWhatsAppStartupError(error) {
+    const message = error?.message || 'Unknown startup error';
+
+    if (message.includes('.cache/puppeteer') || message.includes('Chrome for Testing')) {
+        return 'Could not start the browser. Install Google Chrome or Brave, or set PUPPETEER_EXECUTABLE_PATH to a Chromium-based browser.';
+    }
+
+    if (message.includes('Browser was not found')) {
+        return 'No compatible browser found. Install Google Chrome or Brave and try again.';
+    }
+
+    return `Failed to initialize WhatsApp: ${message.split('\n')[0]}`;
+}
+
+async function disposeWhatsAppClient() {
+    if (!whatsappClient) return;
+
+    const client = whatsappClient;
+    whatsappClient = null;
+
+    try {
+        await client.destroy();
+    } catch (error) {
+        console.error('Error destroying WhatsApp client:', error);
+    }
+}
 
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -26,7 +80,7 @@ function createWindow() {
             contextIsolation: true,
             enableRemoteModule: false,
             webSecurity: true,
-            preload: path.join(__dirname, 'preload.js')
+            preload: path.join(__dirname, 'preload.cjs')
         },
         icon: path.join(__dirname, '../../desktopIcon.icns')
     });
@@ -43,7 +97,6 @@ function createWindow() {
             console.error('Failed to load dist file:', err);
         });
         
-        // Add error handling for failed resource loads
         mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
             console.error('Failed to load:', validatedURL, 'Error:', errorDescription);
         });
@@ -51,9 +104,7 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
-    // Clean up WhatsApp files on startup for fresh session
     deleteWhatsAppFiles();
-    
     createWindow();
 
     app.on('activate', () => {
@@ -64,18 +115,7 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
-    // Clean up WhatsApp files when app is closing
-    if (whatsappClient) {
-        try {
-            // Attempt to logout from WhatsApp before closing
-            whatsappClient.logout().catch(err => {
-                console.error('Error during logout on close:', err);
-            });
-        } catch (error) {
-            console.error('Error attempting logout on close:', error);
-        }
-        whatsappClient = null;
-    }
+    disposeWhatsAppClient();
     deleteWhatsAppFiles();
     
     if (process.platform !== 'darwin') {
@@ -84,42 +124,34 @@ app.on('window-all-closed', () => {
 });
 
 app.on('before-quit', () => {
-    // Additional cleanup before app quits
-    if (whatsappClient) {
-        try {
-            // Attempt to logout from WhatsApp before quitting
-            whatsappClient.logout().catch(err => {
-                console.error('Error during logout on quit:', err);
-            });
-        } catch (error) {
-            console.error('Error attempting logout on quit:', error);
-        }
-        whatsappClient = null;
-    }
+    disposeWhatsAppClient();
     deleteWhatsAppFiles();
 });
 
-// IPC handlers for Gmail
 ipcMain.handle('gmail-auth', handleGmailAuth);
 ipcMain.handle('gmail-token', handleGmailToken);
 ipcMain.handle('send-email', handleSendEmail);
-
-// IPC handlers for SMTP
 ipcMain.handle('smtp-send', handleSMTPSend);
 
-// IPC handlers for WhatsApp
 ipcMain.handle('whatsapp-start-client', async () => {
     if (whatsappClient) {
         mainWindow.webContents.send('whatsapp-status', 'Client already running.');
         return;
     }
 
-    // Send initializing status immediately
     mainWindow.webContents.send('whatsapp-status', 'Initializing WhatsApp client...');
+
+    const browserExecutablePath = getBrowserExecutablePath();
+
+    if (!browserExecutablePath) {
+        mainWindow.webContents.send('whatsapp-status', 'No compatible browser found. Install Google Chrome or Brave and try again.');
+        return { success: false, message: 'No compatible browser found' };
+    }
 
     whatsappClient = new Client({
         authStrategy: new LocalAuth(),
         puppeteer: {
+            executablePath: browserExecutablePath,
             headless: true,
             args: [
                 '--no-sandbox',
@@ -128,7 +160,6 @@ ipcMain.handle('whatsapp-start-client', async () => {
                 '--disable-accelerated-2d-canvas',
                 '--no-first-run',
                 '--no-zygote',
-                '--single-process',
                 '--disable-gpu'
             ],
         },
@@ -136,7 +167,6 @@ ipcMain.handle('whatsapp-start-client', async () => {
 
     whatsappClient.on('qr', (qr) => {
         mainWindow.webContents.send('whatsapp-status', 'Scan QR code to authenticate');
-        // Convert QR string to data URL using QRCode library
         QRCode.toDataURL(qr)
             .then(dataUrl => {
                 mainWindow.webContents.send('whatsapp-qr', dataUrl);
@@ -149,13 +179,11 @@ ipcMain.handle('whatsapp-start-client', async () => {
 
     whatsappClient.on('ready', () => {
         mainWindow.webContents.send('whatsapp-status', 'Client is ready!');
-        // Clear QR code when ready
         mainWindow.webContents.send('whatsapp-qr', null);
     });
 
     whatsappClient.on('authenticated', () => {
         mainWindow.webContents.send('whatsapp-status', 'Authenticated!');
-        // Clear QR code when authenticated
         mainWindow.webContents.send('whatsapp-qr', null);
     });
 
@@ -171,8 +199,12 @@ ipcMain.handle('whatsapp-start-client', async () => {
     try {
         mainWindow.webContents.send('whatsapp-status', 'Starting WhatsApp client...');
         await whatsappClient.initialize();
+        return { success: true };
     } catch (error) {
-        mainWindow.webContents.send('whatsapp-status', 'Failed to initialize client: ' + error.message);
+        console.error('Failed to initialize WhatsApp client:', error);
+        mainWindow.webContents.send('whatsapp-status', formatWhatsAppStartupError(error));
+        whatsappClient = null;
+        return { success: false, message: formatWhatsAppStartupError(error) };
     }
 });
 
@@ -188,7 +220,16 @@ ipcMain.handle('whatsapp-send-messages', async (event, { contacts, messageText }
 
     for (const contact of contacts) {
         const number = contact.number;
-        const personalizedMessage = messageText.replace('{{name}}', contact.name || 'Friend');
+        let personalizedMessage = messageText;
+        personalizedMessage = personalizedMessage.replaceAll('{{name}}', contact.name || 'Friend');
+        personalizedMessage = personalizedMessage.replaceAll('{{number}}', contact.number || '');
+        personalizedMessage = personalizedMessage.replaceAll('{{email}}', contact.email || '');
+        if (contact.fields) {
+            for (const [key, value] of Object.entries(contact.fields)) {
+                personalizedMessage = personalizedMessage.replaceAll(`{{${key}}}`, String(value || ''));
+            }
+        }
+
         const chatId = number.startsWith('+') ? `${number.substring(1)}@c.us` : `${number}@c.us`;
 
         try {
@@ -213,55 +254,39 @@ ipcMain.handle('whatsapp-send-messages', async (event, { contacts, messageText }
 });
 
 ipcMain.handle('whatsapp-import-contacts', async () => {
-    const { filePaths } = await dialog.showOpenDialog(mainWindow, {
+    const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
         properties: ['openFile'],
         filters: [
-            { name: 'Text Files', extensions: ['txt', 'csv'] },
+            { name: 'Contact Files', extensions: ['txt', 'csv'] },
             { name: 'All Files', extensions: ['*'] }
         ]
     });
-    if (filePaths && filePaths.length > 0) {
-        const filePath = filePaths[0];
-        const ext = path.extname(filePath).toLowerCase();
-        const contacts = [];
-        try {
-            if (ext === '.csv') {
-                return new Promise((resolve, reject) => {
-                    fs.createReadStream(filePath)
-                        .pipe(csv())
-                        .on('data', (row) => {
-                            if (row.number) {
-                                contacts.push({ number: row.number.trim(), name: row.name ? row.name.trim() : null });
-                            }
-                        })
-                        .on('end', () => {
-                            resolve(contacts);
-                        })
-                        .on('error', (error) => {
-                            reject(error);
-                        });
-                });
-            } else if (ext === '.txt') {
-                const data = fs.readFileSync(filePath, 'utf-8');
-                data.split(/\r?\n/).forEach(line => {
-                    line = line.trim();
-                    if (line) {
-                        const parts = line.split(',');
-                        contacts.push({ number: parts[0].trim(), name: parts[1] ? parts[1].trim() : null });
-                    }
-                });
-                return contacts;
-            } else {
-                throw new Error('Unsupported file type');
-            }
-        } catch {
-            return [];
-        }
+
+    if (canceled || !filePaths?.length) {
+        return { canceled: true };
     }
-    return null;
+
+    const filePath = filePaths[0];
+    const ext = path.extname(filePath).toLowerCase();
+
+    try {
+        const content = fs.readFileSync(filePath, 'utf-8');
+        const fileName = path.basename(filePath);
+        let headers = [];
+
+        if (ext === '.csv') {
+            headers = parseCsvHeaders(content);
+            return { success: true, content, fileName, ext, headers };
+        } else if (ext === '.txt') {
+            return { success: true, content, fileName, ext, headers: [] };
+        } else {
+            return { success: false, error: 'Unsupported file type. Use .csv or .txt files.' };
+        }
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
 });
 
-// File dialog for importing email lists
 ipcMain.handle('import-email-list', async () => {
     const result = await dialog.showOpenDialog(mainWindow, {
         properties: ['openFile'],
@@ -275,61 +300,31 @@ ipcMain.handle('import-email-list', async () => {
     return result;
 });
 
-// Read email list file content
 ipcMain.handle('read-email-list-file', async (event, filePath) => {
     try {
         const fileContent = fs.readFileSync(filePath, 'utf8');
         
-        // Determine file type and parse accordingly
         if (filePath.endsWith('.csv')) {
-            // Parse CSV file
-            return new Promise((resolve, reject) => {
-                const emails = [];
-                fs.createReadStream(filePath)
-                    .pipe(csv())
-                    .on('data', (row) => {
-                        // Look for common email column names
-                        const email = row.email || row.Email || row.EMAIL || 
-                                     row.address || row.Address || row.ADDRESS ||
-                                     Object.values(row)[0]; // fallback to first column
-                        if (email && email.includes('@')) {
-                            emails.push(email.trim());
-                        }
-                    })
-                    .on('end', () => {
-                        resolve(emails.join('\n'));
-                    })
-                    .on('error', (error) => {
-                        reject(error);
-                    });
-            });
-        } else {
-            // For text files, split by lines and filter valid emails
-            const lines = fileContent.split('\n');
-            const emails = lines
-                .map(line => line.trim())
-                .filter(line => line && line.includes('@'));
-            return emails.join('\n');
+            return parseEmailsFromCsv(fileContent).join('\n');
         }
+
+        return parseEmailsFromText(fileContent).join('\n');
     } catch (error) {
         console.error('Error reading email list file:', error);
         throw error;
     }
 });
 
-// Helper function to delete WhatsApp cache and auth files
 const deleteWhatsAppFiles = () => {
     try {
         const cacheDir = path.join(__dirname, '../../.wwebjs_cache');
         const authDir = path.join(__dirname, '../../.wwebjs_auth');
         
-        // Delete cache directory
         if (fs.existsSync(cacheDir)) {
             fs.rmSync(cacheDir, { recursive: true, force: true });
             console.log('Deleted .wwebjs_cache directory');
         }
         
-        // Delete auth directory
         if (fs.existsSync(authDir)) {
             fs.rmSync(authDir, { recursive: true, force: true });
             console.log('Deleted .wwebjs_auth directory');
@@ -339,33 +334,60 @@ const deleteWhatsAppFiles = () => {
     }
 };
 
-// IPC handlers for WhatsApp logout
 ipcMain.handle('whatsapp-logout', async () => {
     if (whatsappClient) {
         try {
             await whatsappClient.logout();
             whatsappClient = null;
-            
-            // Delete cache and auth files after logout
             deleteWhatsAppFiles();
-            
             mainWindow.webContents.send('whatsapp-status', 'Disconnected');
             mainWindow.webContents.send('whatsapp-qr', null);
             return { success: true, message: 'Successfully logged out from WhatsApp and cleared cache' };
         } catch (error) {
             console.error('Error logging out from WhatsApp:', error);
-            whatsappClient = null; // Force cleanup even if logout fails
-            
-            // Delete cache and auth files even if logout fails
+            whatsappClient = null;
             deleteWhatsAppFiles();
-            
             mainWindow.webContents.send('whatsapp-status', 'Disconnected (forced)');
             mainWindow.webContents.send('whatsapp-qr', null);
             return { success: false, message: `Logout error: ${error.message}` };
         }
     } else {
-        // If no active session, still clean up any leftover files
         deleteWhatsAppFiles();
         return { success: true, message: 'No active WhatsApp session to logout from (cleaned up files)' };
+    }
+});
+
+ipcMain.handle('template-save', async (event, data) => {
+    try {
+        const templates = store.get('templates', []);
+        const idx = templates.findIndex((t) => t.name === data.name);
+        if (idx >= 0) {
+            templates[idx] = { ...templates[idx], ...data, updatedAt: Date.now() };
+        } else {
+            templates.push({ ...data, updatedAt: Date.now() });
+        }
+        store.set('templates', templates);
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
+
+ipcMain.handle('template-list', async () => {
+    try {
+        const templates = store.get('templates', []);
+        return { success: true, templates };
+    } catch (error) {
+        return { success: false, error: error.message, templates: [] };
+    }
+});
+
+ipcMain.handle('template-delete', async (event, name) => {
+    try {
+        const templates = store.get('templates', []);
+        store.set('templates', templates.filter((t) => t.name !== name));
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: error.message };
     }
 });
