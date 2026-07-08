@@ -1,40 +1,32 @@
-/* global require */
 const { contextBridge, ipcRenderer } = require('electron');
 
+function on(channel, callback) {
+    const listener = (_event, payload) => callback(payload);
+    ipcRenderer.on(channel, listener);
+    return () => ipcRenderer.removeListener(channel, listener);
+}
+
 contextBridge.exposeInMainWorld('electronAPI', {
-    // Gmail methods
     authenticateGmail: () => ipcRenderer.invoke('gmail-auth'),
     getGmailToken: () => ipcRenderer.invoke('gmail-token'),
     sendEmail: (emailData) => ipcRenderer.invoke('send-email', emailData),
-    
-    // SMTP methods
+
     sendSMTPEmail: (smtpData) => ipcRenderer.invoke('smtp-send', smtpData),
-    
-    // File operations
+
     importEmailList: () => ipcRenderer.invoke('import-email-list'),
     readEmailListFile: (filePath) => ipcRenderer.invoke('read-email-list-file', filePath),
-    
-    // Progress tracking
-    onProgress: (callback) => {
-        ipcRenderer.on('email-progress', callback);
-        return () => ipcRenderer.removeListener('email-progress', callback);
-    },
 
-    // WhatsApp methods
+    onProgress: (callback) => on('email-progress', callback),
+
     startWhatsAppClient: () => ipcRenderer.invoke('whatsapp-start-client'),
     logoutWhatsApp: () => ipcRenderer.invoke('whatsapp-logout'),
     sendWhatsAppMessages: (data) => ipcRenderer.invoke('whatsapp-send-messages', data),
     importWhatsAppContacts: () => ipcRenderer.invoke('whatsapp-import-contacts'),
-    onWhatsAppStatus: (callback) => {
-        ipcRenderer.on('whatsapp-status', callback);
-        return () => ipcRenderer.removeListener('whatsapp-status', callback);
-    },
-    onWhatsAppQR: (callback) => {
-        ipcRenderer.on('whatsapp-qr', callback);
-        return () => ipcRenderer.removeListener('whatsapp-qr', callback);
-    },
-    onWhatsAppSendStatus: (callback) => {
-        ipcRenderer.on('whatsapp-send-status', callback);
-        return () => ipcRenderer.removeListener('whatsapp-send-status', callback);
-    }
+    onWhatsAppStatus: (callback) => on('whatsapp-status', callback),
+    onWhatsAppQR: (callback) => on('whatsapp-qr', callback),
+    onWhatsAppSendStatus: (callback) => on('whatsapp-send-status', callback),
+
+    saveTemplate: (data) => ipcRenderer.invoke('template-save', data),
+    listTemplates: () => ipcRenderer.invoke('template-list'),
+    deleteTemplate: (name) => ipcRenderer.invoke('template-delete', name),
 });
