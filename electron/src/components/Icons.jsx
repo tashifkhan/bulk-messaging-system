@@ -1,52 +1,61 @@
 import React from "react";
 
-export const GmailIcon = () => (
-	<svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-		<path d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 0 1 0 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L5.455 4.64 12 9.548l6.545-4.91 1.528-1.145C21.69 2.28 24 3.434 24 5.457z" />
+export const MailIcon = ({ className = "w-6 h-6" }) => (
+	<svg className={className} viewBox="0 0 24 24" fill="currentColor">
+		<path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
 	</svg>
 );
 
-export const ServerIcon = () => (
-	<svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-		<path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6zM4 14a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2z" />
-		<circle cx="7" cy="7" r="1" />
-		<circle cx="7" cy="15" r="1" />
+export const GmailIcon = ({ className = "w-5 h-5" }) => (
+	<svg className={className} viewBox="0 0 24 24" fill="currentColor">
+		<path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
 	</svg>
 );
 
-export const MailIcon = () => (
-	<svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-		<path d="M2.25 6.75c0 .41.2.775.51.999L12 13.52l9.24-5.771c.31-.224.51-.589.51-.999V5.25A2.25 2.25 0 0 0 19.5 3H4.5A2.25 2.25 0 0 0 2.25 5.25v1.5z" />
-		<path d="M12 14.985L2.756 9.214A2.25 2.25 0 0 0 2.25 11.25v7.5A2.25 2.25 0 0 0 4.5 21h15a2.25 2.25 0 0 0 2.25-2.25v-7.5a2.25 2.25 0 0 0-.506-2.036L12 14.985z" />
+export const ServerIcon = ({ className = "w-5 h-5" }) => (
+	<svg className={className} viewBox="0 0 24 24" fill="currentColor">
+		<path d="M4 4h16v4H4V4zm0 6h16v4H4v-4zm0 6h16v4H4v-4z" />
 	</svg>
 );
 
-export const FolderIcon = () => (
-	<svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-		<path d="M9.75 3A3.75 3.75 0 0 0 6 6.75v10.5A3.75 3.75 0 0 0 9.75 21h4.5A3.75 3.75 0 0 0 18 17.25V9a3 3 0 0 0-3-3h-1.379a1.5 1.5 0 0 1-1.06-.44L11.5 4.5A1.5 1.5 0 0 0 10.44 4.06L9.75 3z" />
+export const WhatsAppIcon = ({ className = "w-5 h-5" }) => (
+	<svg className={className} viewBox="0 0 24 24" fill="currentColor">
+		<path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
 	</svg>
 );
 
-export const SendIcon = () => (
-	<svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-		<path d="M3.478 2.405a.75.75 0 0 0-.926.94l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.405z" />
+export const FolderIcon = ({ className = "w-4 h-4" }) => (
+	<svg className={className} viewBox="0 0 24 24" fill="currentColor">
+		<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
 	</svg>
 );
 
-export const CheckIcon = () => (
-	<svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-		<path d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+export const SendIcon = ({ className = "w-5 h-5" }) => (
+	<svg className={className} viewBox="0 0 24 24" fill="currentColor">
+		<path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
 	</svg>
 );
 
-export const LockIcon = () => (
-	<svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-		<path d="M18 10.5c0 .401-.127.773-.342 1.078l-6.75 9.75a1.5 1.5 0 01-2.416 0l-6.75-9.75A1.878 1.878 0 012.25 10.5C2.25 5.806 6.056 2 10.75 2S19.25 5.806 19.25 10.5z" />
+export const CheckIcon = ({ className = "w-5 h-5" }) => (
+	<svg className={className} viewBox="0 0 24 24" fill="currentColor">
+		<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
 	</svg>
 );
 
-export const WhatsAppIcon = () => (
-	<svg className="w-5 h-5" viewBox="0 0 32 32" fill="currentColor">
-		<path d="M16 3C9.373 3 4 8.373 4 15c0 2.385.832 4.584 2.236 6.393L4 29l7.828-2.236C13.416 27.168 15.615 28 18 28c6.627 0 12-5.373 12-12S22.627 3 16 3zm0 22c-2.021 0-3.938-.586-5.555-1.6l-.396-.25-4.646 1.328 1.328-4.646-.25-.396C6.586 18.938 6 17.021 6 15c0-5.514 4.486-10 10-10s10 4.486 10 10-4.486 10-10 10zm5.29-7.71c-.26-.13-1.54-.76-1.78-.85-.24-.09-.41-.13-.58.13-.17.26-.67.85-.82 1.02-.15.17-.3.19-.56.06-.26-.13-1.09-.4-2.07-1.28-.76-.68-1.27-1.52-1.42-1.78-.15-.26-.02-.4.11-.53.11-.11.26-.3.39-.45.13-.15.17-.26.26-.43.09-.17.04-.32-.02-.45-.06-.13-.58-1.39-.8-1.91-.21-.51-.43-.44-.58-.45-.15-.01-.32-.01-.5-.01-.17 0-.45.06-.68.32-.23.26-.9.88-.9 2.15s.92 2.49 1.05 2.66c.13.17 1.81 2.77 4.39 3.78.61.21 1.09.33 1.46.42.61.13 1.16.11 1.6.07.49-.05 1.54-.63 1.76-1.24.22-.61.22-1.13.15-1.24-.07-.11-.24-.17-.5-.3z" />
+export const LockIcon = ({ className = "w-5 h-5" }) => (
+	<svg className={className} viewBox="0 0 24 24" fill="currentColor">
+		<path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" />
+	</svg>
+);
+
+export const HashIcon = ({ className = "w-4 h-4" }) => (
+	<svg className={className} viewBox="0 0 24 24" fill="currentColor">
+		<path d="M9 3h2v18H9V3zm4 0h2v18h-2V3zM5 9h14v2H5V9zm0 4h14v2H5v-2z" />
+	</svg>
+);
+
+export const SettingsIcon = ({ className = "w-5 h-5" }) => (
+	<svg className={className} viewBox="0 0 24 24" fill="currentColor">
+		<path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z" />
 	</svg>
 );

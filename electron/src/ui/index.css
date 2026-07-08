@@ -1,8 +1,23 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #1e1f22 #2b2d31;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #313338;
+  color: #dbdee1;
+}
 
 /* Discord-like scrollbar */
 ::-webkit-scrollbar {
-  width: 16px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-corner {
@@ -10,27 +25,30 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: #202225;
-  min-height: 40px;
+  background-color: #1e1f22;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #1a1c1f;
+  background-color: #272a2f;
 }
 
 ::-webkit-scrollbar-track {
-  background-color: #2e3338;
-  border: 4px solid #36393f;
-  border-radius: 8px;
-}
-
-::-webkit-scrollbar-track-piece {
   background-color: transparent;
 }
 
 /* Discord focus styles */
-input:focus, textarea:focus, button:focus {
-  outline: 2px solid #5865f2;
-  outline-offset: 0;
+input:focus, textarea:focus, select:focus {
+  outline: none;
 }
 
+/* Discord selection color */
+::selection {
+  background-color: #5865f2;
+  color: #fff;
+}
+
+/* Smooth scrolling for channel sections */
+html {
+  scroll-behavior: smooth;
+}

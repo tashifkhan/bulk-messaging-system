@@ -1,13 +1,45 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Sidebar from "./Sidebar";
+import ChannelSidebar from "./ChannelSidebar";
 import TopBar from "./TopBar";
 import WhatsAppForm from "./WhatsAppForm";
 import GmailForm from "./GmailForm";
 import SMTPForm from "./SMTPForm";
-import { parseManualNumbers } from "../utils/pyodide.js";
+import ColumnMappingModal from "./ColumnMappingModal";
+import { parseContactsFromText } from "../shared/contact-parser.js";
+
+const channelConfig = {
+	whatsapp: [
+		{ id: "connection", name: "connection" },
+		{ id: "contacts", name: "contacts" },
+		{ id: "compose", name: "compose" },
+		{ id: "activity", name: "activity-log" },
+	],
+	gmail: [
+		{ id: "auth", name: "auth" },
+		{ id: "recipients", name: "recipients" },
+		{ id: "compose", name: "compose" },
+		{ id: "activity", name: "activity-log" },
+	],
+	smtp: [
+		{ id: "config", name: "config" },
+		{ id: "recipients", name: "recipients" },
+		{ id: "compose", name: "compose" },
+		{ id: "activity", name: "activity-log" },
+	],
+};
 
 export default function BulkMailer() {
-	const [activeTab, setActiveTab] = useState("whatsapp");
+	const [activeTab, setActiveTabInternal] = useState("whatsapp");
+	const [activeChannel, setActiveChannel] = useState("connection");
+
+	const setActiveTab = (tab) => {
+		setActiveTabInternal(tab);
+		const channels = channelConfig[tab];
+		if (channels && channels.length > 0) {
+			setActiveChannel(channels[0].id);
+		}
+	};
 	const [isGmailAuthenticated, setIsGmailAuthenticated] = useState(false);
 	const [emailList, setEmailList] = useState("");
 	const [subject, setSubject] = useState("");
@@ -21,10 +53,8 @@ export default function BulkMailer() {
 		pass: "",
 	});
 	const [isSending, setIsSending] = useState(false);
-
 	const [results, setResults] = useState([]);
 
-	// WhatsApp configuration
 	const [waContacts, setWaContacts] = useState([]);
 	const [waMessage, setWaMessage] = useState("");
 	const [waStatus, setWaStatus] = useState("");
@@ -32,39 +62,24 @@ export default function BulkMailer() {
 	const [waSending, setWaSending] = useState(false);
 	const [waResults, setWaResults] = useState([]);
 
-	useEffect(() => {
-		// Check Gmail authentication status
-		checkGmailAuth();
+	const [showMappingModal, setShowMappingModal] = useState(false);
+	const [rawImportData, setRawImportData] = useState(null);
 
-		// WhatsApp status listener
-		const removeWaStatus = window.electronAPI?.onWhatsAppStatus?.((_, status) =>
-			setWaStatus(status)
-		);
-		const removeWaQR = window.electronAPI?.onWhatsAppQR?.((_, qr) =>
-			setWaQR(qr)
-		);
-		const removeWaSendStatus = window.electronAPI?.onWhatsAppSendStatus?.(
-			(_, msg) => {
-				setWaStatus(msg);
-				setWaResults((prev) => [...prev, msg]);
-			}
-		);
-
-		return () => {
-			if (removeWaStatus) removeWaStatus();
-			if (removeWaQR) removeWaQR();
-			if (removeWaSendStatus) removeWaSendStatus();
-		};
-	}, []);
+	const contactFieldNames = useMemo(() => {
+		const names = new Set();
+		waContacts.forEach((c) => {
+			if (c.name) names.add("name");
+			Object.keys(c.fields || {}).forEach((k) => names.add(k));
+		});
+		return [...names];
+	}, [waContacts]);
 
 	const checkGmailAuth = async () => {
 		try {
-			// Check if electronAPI is available
 			if (!window.electronAPI?.getGmailToken) {
 				console.warn("Gmail token function not available");
 				return;
 			}
-
 			const result = await window.electronAPI.getGmailToken();
 			setIsGmailAuthenticated(result.hasToken);
 		} catch (error) {
@@ -72,23 +87,54 @@ export default function BulkMailer() {
 		}
 	};
 
+	useEffect(() => {
+		const gmailAuthTimer = window.setTimeout(() => {
+			checkGmailAuth();
+		}, 0);
+
+		const removeWaStatus = window.electronAPI?.onWhatsAppStatus?.((status) =>
+			setWaStatus(status)
+		);
+		const removeWaQR = window.electronAPI?.onWhatsAppQR?.((qr) =>
+			setWaQR(qr)
+		);
+		const removeWaSendStatus = window.electronAPI?.onWhatsAppSendStatus?.(
+			(msg) => {
+				setWaStatus(msg);
+				setWaResults((prev) => [...prev, msg]);
+			}
+		);
+
+		return () => {
+			window.clearTimeout(gmailAuthTimer);
+			if (removeWaStatus) removeWaStatus();
+			if (removeWaQR) removeWaQR();
+			if (removeWaSendStatus) removeWaSendStatus();
+		};
+	}, []);
+
+	const handleChannelSelect = (channelId) => {
+		setActiveChannel(channelId);
+		const el = document.getElementById(`section-${channelId}`);
+		if (el) {
+			el.scrollIntoView({ behavior: "smooth", block: "start" });
+		}
+	};
+
 	const authenticateGmail = async () => {
 		try {
-			// Check if electronAPI is available
 			if (!window.electronAPI) {
 				alert(
 					"Electron API not available. Please make sure you're running in Electron environment."
 				);
 				return;
 			}
-
 			if (!window.electronAPI.authenticateGmail) {
 				alert(
 					"Gmail authentication function not available. Please check Electron configuration."
 				);
 				return;
 			}
-
 			const result = await window.electronAPI.authenticateGmail();
 			if (result.success) {
 				setIsGmailAuthenticated(true);
@@ -108,29 +154,24 @@ export default function BulkMailer() {
 
 	const importEmailList = async () => {
 		try {
-			// Check if electronAPI is available
 			if (!window.electronAPI) {
 				alert(
 					"Electron API not available. Please make sure you're running in Electron environment."
 				);
 				return;
 			}
-
 			if (!window.electronAPI.importEmailList) {
 				alert(
 					"Import email list function not available. Please check Electron configuration."
 				);
 				return;
 			}
-
 			const result = await window.electronAPI.importEmailList();
 			if (!result.canceled && result.filePaths.length > 0) {
-				// Read file content
 				const filePath = result.filePaths[0];
 				const fileContent = await window.electronAPI.readEmailListFile(
 					filePath
 				);
-
 				if (fileContent) {
 					setEmailList(fileContent);
 					alert(
@@ -148,33 +189,26 @@ export default function BulkMailer() {
 
 	const validateForm = () => {
 		const recipients = emailList.split("\n").filter((email) => email.trim());
-
 		if (recipients.length === 0) {
 			alert("Please enter at least one email address");
 			return false;
 		}
-
 		if (!subject.trim()) {
 			alert("Please enter a subject");
 			return false;
 		}
-
 		if (!message.trim()) {
 			alert("Please enter a message");
 			return false;
 		}
-
-		// Validate email format
 		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 		const invalidEmails = recipients.filter(
 			(email) => !emailRegex.test(email.trim())
 		);
-
 		if (invalidEmails.length > 0) {
 			alert(`Invalid email addresses found: ${invalidEmails.join(", ")}`);
 			return false;
 		}
-
 		return true;
 	};
 
@@ -184,23 +218,19 @@ export default function BulkMailer() {
 			alert("Please authenticate with Gmail first");
 			return;
 		}
-
 		setIsSending(true);
 		setResults([]);
-
 		try {
 			const recipients = emailList
 				.split("\n")
 				.filter((email) => email.trim())
 				.map((email) => email.trim());
-
 			const result = await window.electronAPI.sendEmail({
 				recipients,
 				subject,
 				message,
 				delay: parseInt(delay),
 			});
-
 			if (result.success) {
 				setResults(result.results);
 				alert(
@@ -220,21 +250,17 @@ export default function BulkMailer() {
 
 	const sendSMTPBulk = async () => {
 		if (!validateForm()) return;
-
 		if (!smtpConfig.host || !smtpConfig.user || !smtpConfig.pass) {
 			alert("Please fill in all SMTP configuration fields");
 			return;
 		}
-
 		setIsSending(true);
 		setResults([]);
-
 		try {
 			const recipients = emailList
 				.split("\n")
 				.filter((email) => email.trim())
 				.map((email) => email.trim());
-
 			const result = await window.electronAPI.sendSMTPEmail({
 				smtpConfig,
 				recipients,
@@ -242,7 +268,6 @@ export default function BulkMailer() {
 				message,
 				delay: parseInt(delay),
 			});
-
 			if (result.success) {
 				setResults(result.results);
 				alert(
@@ -262,21 +287,18 @@ export default function BulkMailer() {
 
 	const startWhatsAppClient = async () => {
 		try {
-			// Check if electronAPI is available
 			if (!window.electronAPI) {
 				alert(
 					"Electron API not available. Please make sure you're running in Electron environment."
 				);
 				return;
 			}
-
 			if (!window.electronAPI.startWhatsAppClient) {
 				alert(
 					"Start WhatsApp client function not available. Please check Electron configuration."
 				);
 				return;
 			}
-
 			setWaStatus("Initializing WhatsApp client...");
 			setWaQR(null);
 			await window.electronAPI.startWhatsAppClient();
@@ -289,21 +311,18 @@ export default function BulkMailer() {
 
 	const logoutWhatsApp = async () => {
 		try {
-			// Check if electronAPI is available
 			if (!window.electronAPI) {
 				alert(
 					"Electron API not available. Please make sure you're running in Electron environment."
 				);
 				return;
 			}
-
 			if (!window.electronAPI.logoutWhatsApp) {
 				alert(
 					"Logout WhatsApp function not available. Please check Electron configuration."
 				);
 				return;
 			}
-
 			const result = await window.electronAPI.logoutWhatsApp();
 			if (result.success) {
 				setWaContacts([]);
@@ -322,43 +341,24 @@ export default function BulkMailer() {
 
 	const importWhatsAppContacts = async () => {
 		try {
-			const input = document.createElement("input");
-			input.type = "file";
-			input.accept = ".txt,.csv,.xlsx,.xls";
-			return new Promise((resolve) => {
-				input.onchange = async (event) => {
-					const file = event.target.files[0];
-					if (!file) {
-						resolve();
-						return;
-					}
-					try {
-						const ext = file.name.split(".").pop().toLowerCase();
-						let contacts = [];
-						if (ext === "csv" || ext === "txt") {
-							const text = await file.text();
-							const result = await parseManualNumbers(text);
-							contacts = result.contacts || [];
-						} else if (["xlsx", "xls"].includes(ext)) {
-							alert("Excel import not yet supported in this version.");
-							contacts = [];
-						}
-						if (contacts.length) {
-							setWaContacts(contacts);
-							alert(
-								`Successfully imported ${contacts.length} contacts from ${file.name}.`
-							);
-						} else {
-							alert("No valid contacts found in file.");
-						}
-					} catch (error) {
-						console.error("Error importing WhatsApp contacts:", error);
-						alert(`Error importing WhatsApp contacts: ${error.message}`);
-					}
-					resolve();
-				};
-				input.click();
-			});
+			if (!window.electronAPI?.importWhatsAppContacts) {
+				alert(
+					"WhatsApp contact import is only available in the Electron app."
+				);
+				return;
+			}
+			const result = await window.electronAPI.importWhatsAppContacts();
+			if (!result || result.canceled) return;
+			if (result.success && result.ext === ".csv" && result.headers?.length > 0) {
+				setRawImportData({ content: result.content, fileName: result.fileName, headers: result.headers });
+				setShowMappingModal(true);
+			} else if (result.success && result.ext === ".txt") {
+				const contacts = parseContactsFromText(result.content);
+				setWaContacts(contacts);
+				alert(`Imported ${contacts.length} contacts from ${result.fileName}`);
+			} else {
+				alert(result.error || "No valid contacts found in file.");
+			}
 		} catch (error) {
 			console.error("Error importing WhatsApp contacts:", error);
 			alert(`Error importing WhatsApp contacts: ${error.message}`);
@@ -374,32 +374,26 @@ export default function BulkMailer() {
 			alert("Please enter a message");
 			return;
 		}
-
 		try {
-			// Check if electronAPI is available
 			if (!window.electronAPI) {
 				alert(
 					"Electron API not available. Please make sure you're running in Electron environment."
 				);
 				return;
 			}
-
 			if (!window.electronAPI.sendWhatsAppMessages) {
 				alert(
 					"Send WhatsApp messages function not available. Please check Electron configuration."
 				);
 				return;
 			}
-
 			setWaSending(true);
 			setWaResults([]);
 			setWaStatus("Sending...");
-
 			const result = await window.electronAPI.sendWhatsAppMessages({
 				contacts: waContacts,
 				messageText: waMessage,
 			});
-
 			setWaSending(false);
 			setWaStatus(
 				result.success
@@ -414,12 +408,59 @@ export default function BulkMailer() {
 		}
 	};
 
+	const handleMappingImport = (mappingResult) => {
+		setWaContacts(mappingResult.contacts);
+		setShowMappingModal(false);
+		setRawImportData(null);
+		if (mappingResult.contacts.length > 0) {
+			alert(`Imported ${mappingResult.contacts.length} contacts from ${rawImportData?.fileName || "file"}`);
+		}
+	};
+
+	const handleCancelMapping = () => {
+		setShowMappingModal(false);
+		setRawImportData(null);
+	};
+
+	const waTemplateService = {
+		save: (name) => window.electronAPI.saveTemplate({ name, channel: "whatsapp", message: waMessage }),
+		list: async () => {
+			const r = await window.electronAPI.listTemplates();
+			return (r.templates || []).filter((t) => t.channel === "whatsapp");
+		},
+		del: (name) => window.electronAPI.deleteTemplate(name),
+	};
+
+	const gmailTemplateService = {
+		save: (name) => window.electronAPI.saveTemplate({ name, channel: "gmail", subject, message }),
+		list: async () => {
+			const r = await window.electronAPI.listTemplates();
+			return (r.templates || []).filter((t) => t.channel === "gmail");
+		},
+		del: (name) => window.electronAPI.deleteTemplate(name),
+	};
+
+	const smtpTemplateService = {
+		save: (name) => window.electronAPI.saveTemplate({ name, channel: "smtp", subject, message }),
+		list: async () => {
+			const r = await window.electronAPI.listTemplates();
+			return (r.templates || []).filter((t) => t.channel === "smtp");
+		},
+		del: (name) => window.electronAPI.deleteTemplate(name),
+	};
+
 	return (
 		<div className="flex h-screen bg-[#313338]">
 			<Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-			<main className="flex-1 flex flex-col bg-gradient-to-br from-[#36393f] via-[#23272a] to-[#23272a]">
+			<ChannelSidebar
+				channels={channelConfig[activeTab]}
+				activeChannel={activeChannel}
+				onChannelSelect={handleChannelSelect}
+				activeTab={activeTab}
+			/>
+			<main className="flex-1 flex flex-col min-w-0">
 				<TopBar activeTab={activeTab} />
-				<section className="flex-1 overflow-y-auto p-6 md:p-10 flex flex-col items-center">
+				<section className="flex-1 overflow-y-auto">
 					{activeTab === "whatsapp" && (
 						<WhatsAppForm
 							waContacts={waContacts}
@@ -434,6 +475,8 @@ export default function BulkMailer() {
 							logoutWhatsApp={logoutWhatsApp}
 							importWhatsAppContacts={importWhatsAppContacts}
 							sendWhatsAppBulk={sendWhatsAppBulk}
+							contactFieldNames={contactFieldNames}
+							templateService={waTemplateService}
 						/>
 					)}
 
@@ -453,6 +496,7 @@ export default function BulkMailer() {
 							importEmailList={importEmailList}
 							sendGmailBulk={sendGmailBulk}
 							authenticateGmail={authenticateGmail}
+							templateService={gmailTemplateService}
 						/>
 					)}
 
@@ -472,10 +516,21 @@ export default function BulkMailer() {
 							results={results}
 							importEmailList={importEmailList}
 							sendSMTPBulk={sendSMTPBulk}
+							templateService={smtpTemplateService}
 						/>
 					)}
 				</section>
 			</main>
+
+			{showMappingModal && rawImportData && (
+				<ColumnMappingModal
+					fileName={rawImportData.fileName}
+					headers={rawImportData.headers}
+					content={rawImportData.content}
+					onImport={handleMappingImport}
+					onCancel={handleCancelMapping}
+				/>
+			)}
 		</div>
 	);
 }

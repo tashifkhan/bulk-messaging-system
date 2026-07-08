@@ -1,4 +1,78 @@
-import { GmailIcon, FolderIcon, SendIcon, CheckIcon, LockIcon } from "./Icons";
+import React, { useState } from "react";
+import { GmailIcon, FolderIcon, SendIcon, CheckIcon, LockIcon, HashIcon } from "./Icons";
+
+function SectionHeader({ title }) {
+	return (
+		<div className="pt-6 pb-2 px-4">
+			<div className="flex items-center gap-2">
+				<HashIcon />
+				<h2 className="text-xs font-semibold text-[#949ba4] uppercase tracking-wider">
+					{title}
+				</h2>
+				<div className="flex-1 h-px bg-[#3f4149]" />
+			</div>
+		</div>
+	);
+}
+
+function DiscordMessage({ avatar, username, color, timestamp, content }) {
+	return (
+		<div className="group flex items-start gap-4 px-4 py-2 rounded hover:bg-[#2e3035] transition-colors">
+			<div
+				className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-white text-sm font-semibold"
+				style={{ backgroundColor: color }}
+			>
+				{avatar}
+			</div>
+			<div className="min-w-0 flex-1">
+				<div className="flex items-baseline gap-2">
+					<span className="text-sm font-semibold" style={{ color }}>
+						{username}
+					</span>
+					<span className="text-[10px] text-[#949ba4]">{timestamp}</span>
+				</div>
+				<div className="text-sm text-[#dbdee1] mt-0.5 whitespace-pre-wrap break-words">
+					{content}
+				</div>
+			</div>
+		</div>
+	);
+}
+
+function DiscordInput({ className = "", ...props }) {
+	return (
+		<input
+			className={`w-full px-3 py-2.5 bg-[#383a40] text-[#dbdee1] placeholder-[#6d6f78] rounded-[4px] text-sm border-none focus:ring-2 focus:ring-[#5865f2]/30 transition-shadow ${className}`}
+			{...props}
+		/>
+	);
+}
+
+function DiscordTextarea({ className = "", ...props }) {
+	return (
+		<textarea
+			className={`w-full px-3 py-2.5 bg-[#383a40] text-[#dbdee1] placeholder-[#6d6f78] rounded-[4px] text-sm border-none focus:ring-2 focus:ring-[#5865f2]/30 transition-shadow resize-none ${className}`}
+			{...props}
+		/>
+	);
+}
+
+function DiscordButton({ variant = "primary", className = "", children, ...props }) {
+	const variants = {
+		primary: "bg-[#5865f2] hover:bg-[#4752c4] text-white",
+		green: "bg-[#23a55a] hover:bg-[#1a8a4a] text-white",
+		red: "bg-[#da373c] hover:bg-[#a1282b] text-white",
+		secondary: "bg-[#4e5058] hover:bg-[#6d6f78] text-white",
+	};
+	return (
+		<button
+			className={`px-4 py-2 rounded-[4px] text-sm font-medium transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${variants[variant] || variants.primary} ${className}`}
+			{...props}
+		>
+			{children}
+		</button>
+	);
+}
 
 export default function GmailForm({
 	isGmailAuthenticated,
@@ -15,54 +89,22 @@ export default function GmailForm({
 	importEmailList,
 	sendGmailBulk,
 	authenticateGmail,
+	templateService,
 }) {
-	return (
-		<div className="w-full max-w-5xl mx-auto">
-			{/* Modern Header */}
-			<div className="flex items-center justify-between mb-8 p-6 bg-gradient-to-r from-[#ea4335]/10 to-[#ea4335]/5 rounded-2xl border border-[#ea4335]/20">
-				<div className="flex items-center gap-4">
-					<div className="relative">
-						<div className="w-16 h-16 bg-gradient-to-br from-[#ea4335] to-[#d23125] rounded-2xl flex items-center justify-center shadow-lg">
-							<GmailIcon className="w-8 h-8 text-white" />
-						</div>
-						<div className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#23272a] rounded-full flex items-center justify-center border-2 border-[#ea4335]">
-							<div
-								className={`w-3 h-3 rounded-full ${
-									isGmailAuthenticated ? "bg-green-400" : "bg-gray-500"
-								}`}
-							></div>
-						</div>
-					</div>
-					<div>
-						<h1 className="text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-							Gmail Bulk Sender
-						</h1>
-						<p className="text-gray-400 font-medium">
-							Send bulk emails using Gmail API
-						</p>
-					</div>
-				</div>
-				<div className="text-right">
-					<div className="text-sm text-gray-400 mb-1">Authentication</div>
-					<div
-						className={`font-semibold text-lg ${
-							isGmailAuthenticated ? "text-green-400" : "text-yellow-400"
-						}`}
-					>
-						{isGmailAuthenticated ? "Authenticated" : "Not Authenticated"}
-					</div>
-				</div>
-			</div>
+	const recipientCount = emailList.split("\n").filter((e) => e.trim()).length;
 
-			{/* Main Content Grid */}
-			<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-				{/* Left Column - Controls */}
-				<div className="lg:col-span-2 space-y-6">
-					{/* Authentication Status */}
-					<div className="bg-[#2b2d31] rounded-xl p-6 border border-[#404249] shadow-xl">
-						<div className="flex items-center justify-between mb-6">
+	const formatTime = () => new Date().toLocaleTimeString();
+
+	return (
+		<div className="max-w-[800px] mx-auto">
+			{/* Auth Section */}
+			<div id="section-auth" className="scroll-mt-12">
+				<SectionHeader title="Auth" />
+				<div className="px-4">
+					<div className="bg-[#2b2d31] rounded-[4px] border border-[#3f4149] p-4">
+						<div className="flex items-center justify-between">
 							<div className="flex items-center gap-3">
-								<div className="w-10 h-10 bg-[#ea4335] rounded-lg flex items-center justify-center">
+								<div className="w-10 h-10 bg-[#ea4335] rounded-full flex items-center justify-center">
 									{isGmailAuthenticated ? (
 										<CheckIcon className="w-5 h-5 text-white" />
 									) : (
@@ -70,177 +112,139 @@ export default function GmailForm({
 									)}
 								</div>
 								<div>
-									<h3 className="text-lg font-semibold text-white">
-										Gmail Authentication
-									</h3>
-									<p className="text-sm text-gray-400">
-										{isGmailAuthenticated
-											? "Ready to send emails"
-											: "Authentication required"}
+									<p className="text-sm font-semibold text-[#dbdee1]">Gmail Authentication</p>
+									<p className="text-xs text-[#949ba4]">
+										{isGmailAuthenticated ? "Authenticated" : "Authentication required"}
 									</p>
 								</div>
 							</div>
 							{isGmailAuthenticated ? (
-								<div className="flex items-center gap-2 px-4 py-2 bg-green-500/20 border border-green-500/30 rounded-lg">
-									<CheckIcon className="w-4 h-4 text-green-400" />
-									<span className="text-green-400 font-medium">
-										Authenticated
-									</span>
+								<div className="flex items-center gap-2 px-3 py-1.5 bg-[#23a55a]/10 border border-[#23a55a]/30 rounded-[4px]">
+									<div className="w-2 h-2 rounded-full bg-[#23a55a]" />
+									<span className="text-xs font-medium text-[#23a55a]">Authenticated</span>
 								</div>
 							) : (
-								<button
-									onClick={authenticateGmail}
-									disabled={isSending}
-									className="px-6 py-3 bg-gradient-to-r from-[#ea4335] to-[#d23125] hover:from-[#d23125] hover:to-[#c2312f] disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:cursor-not-allowed flex items-center gap-2"
-								>
+								<DiscordButton variant="red" onClick={authenticateGmail} disabled={isSending}>
 									<LockIcon className="w-4 h-4" />
-									Authenticate Gmail
-								</button>
+									Authenticate
+								</DiscordButton>
 							)}
 						</div>
 					</div>
+				</div>
+			</div>
 
-					{/* Email Configuration */}
-					<div className="bg-[#2b2d31] rounded-xl p-6 border border-[#404249] shadow-xl">
-						<div className="flex items-center justify-between mb-6">
+			{/* Recipients Section */}
+			<div id="section-recipients" className="scroll-mt-12">
+				<SectionHeader title="Recipients" />
+				<div className="px-4">
+					<div className="bg-[#2b2d31] rounded-[4px] border border-[#3f4149] p-4">
+						<div className="flex items-center justify-between mb-4">
 							<div className="flex items-center gap-3">
-								<div className="w-10 h-10 bg-[#23a55a] rounded-lg flex items-center justify-center">
+								<div className="w-10 h-10 bg-[#23a55a] rounded-full flex items-center justify-center">
 									<FolderIcon className="w-5 h-5 text-white" />
 								</div>
 								<div>
-									<h3 className="text-lg font-semibold text-white">
-										Recipients
-									</h3>
-									<p className="text-sm text-gray-400">
-										Import or enter email addresses
-									</p>
+									<p className="text-sm font-semibold text-[#dbdee1]">Recipients</p>
+									<p className="text-xs text-[#949ba4]">Import or enter email addresses</p>
 								</div>
 							</div>
-							<button
-								onClick={importEmailList}
-								disabled={isSending}
-								className="px-6 py-3 bg-gradient-to-r from-[#23a55a] to-[#1e8e4f] hover:from-[#1e8e4f] hover:to-[#198a47] disabled:from-gray-600 disabled:to-gray-700 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:cursor-not-allowed flex items-center gap-2"
-							>
+							<DiscordButton variant="green" onClick={importEmailList} disabled={isSending}>
 								<FolderIcon className="w-4 h-4" />
-								Import Email List
-							</button>
+								Import
+							</DiscordButton>
 						</div>
 
-						<div className="grid grid-cols-2 gap-4 mb-4">
-							<div className="bg-[#313338] rounded-lg p-4 border border-[#404249]">
-								<div className="text-xs text-gray-400 uppercase tracking-wide mb-1">
-									Recipients
-								</div>
-								<div className="text-2xl font-bold text-white">
-									{emailList.split("\n").filter((email) => email.trim()).length}
-								</div>
+						<div className="flex items-center gap-4 mb-4">
+							<div className="bg-[#1e1f22] rounded-[4px] px-4 py-3 flex-1">
+								<p className="text-[10px] text-[#949ba4] uppercase tracking-wider">Recipients</p>
+								<p className="text-xl font-semibold text-[#dbdee1] mt-1">{recipientCount}</p>
 							</div>
-							<div className="bg-[#313338] rounded-lg p-4 border border-[#404249]">
-								<div className="text-xs text-gray-400 uppercase tracking-wide mb-1">
-									Status
-								</div>
-								<div className="text-sm font-semibold text-white">
-									{emailList.split("\n").filter((email) => email.trim())
-										.length > 0
-										? "Ready"
-										: "No recipients"}
-								</div>
+							<div className="bg-[#1e1f22] rounded-[4px] px-4 py-3 flex-1">
+								<p className="text-[10px] text-[#949ba4] uppercase tracking-wider">Status</p>
+								<p className="text-sm font-semibold text-[#dbdee1] mt-1">
+									{recipientCount > 0 ? "Ready" : "No recipients"}
+								</p>
 							</div>
 						</div>
 
-						<div className="space-y-4">
-							<div>
-								<label className="block text-gray-300 text-sm font-medium mb-2">
-									Email Recipients (one per line)
-								</label>
-								<textarea
-									value={emailList}
-									onChange={(e) => setEmailList(e.target.value)}
-									placeholder="email1@example.com
-email2@example.com
-email3@example.com"
-									disabled={isSending}
-									className="w-full h-32 px-4 py-3 bg-[#313338] border border-[#404249] rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-[#5865f2] focus:ring-2 focus:ring-[#5865f2]/20 disabled:opacity-50 resize-none transition-all duration-200"
-								/>
-							</div>
-						</div>
+						<DiscordTextarea
+							value={emailList}
+							onChange={(e) => setEmailList(e.target.value)}
+							placeholder="email1@example.com&#10;email2@example.com&#10;email3@example.com"
+							disabled={isSending}
+							className="h-24"
+						/>
 					</div>
+				</div>
+			</div>
 
-					{/* Email Content */}
-					<div className="bg-[#2b2d31] rounded-xl p-6 border border-[#404249] shadow-xl">
-						<div className="flex items-center gap-3 mb-6">
-							<div className="w-10 h-10 bg-[#f23f42] rounded-lg flex items-center justify-center">
+			{/* Compose Section */}
+			<div id="section-compose" className="scroll-mt-12">
+				<SectionHeader title="Compose" />
+				<div className="px-4">
+					<div className="bg-[#2b2d31] rounded-[4px] border border-[#3f4149] p-4">
+						<div className="flex items-center gap-3 mb-4">
+							<div className="w-10 h-10 bg-[#f23f43] rounded-full flex items-center justify-center">
 								<SendIcon className="w-5 h-5 text-white" />
 							</div>
 							<div>
-								<h3 className="text-lg font-semibold text-white">
-									Email Content
-								</h3>
-								<p className="text-sm text-gray-400">Compose your email</p>
+								<p className="text-sm font-semibold text-[#dbdee1]">Email Content</p>
+								<p className="text-xs text-[#949ba4]">Compose your email</p>
 							</div>
 						</div>
 
-						<div className="space-y-4">
-							<div>
-								<label className="block text-gray-300 text-sm font-medium mb-2">
-									Subject
-								</label>
-								<input
-									type="text"
-									value={subject}
-									onChange={(e) => setSubject(e.target.value)}
-									placeholder="Enter email subject"
-									disabled={isSending}
-									className="w-full px-4 py-3 bg-[#313338] border border-[#404249] rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-[#5865f2] focus:ring-2 focus:ring-[#5865f2]/20 disabled:opacity-50 transition-all duration-200"
-								/>
-							</div>
+						<div className="space-y-3">
+							<DiscordInput
+								type="text"
+								value={subject}
+								onChange={(e) => setSubject(e.target.value)}
+								placeholder="Enter email subject"
+								disabled={isSending}
+							/>
 
 							<div className="relative">
-								<label className="block text-gray-300 text-sm font-medium mb-2">
-									Message
-								</label>
-								<textarea
+								<DiscordTextarea
 									value={message}
 									onChange={(e) => setMessage(e.target.value)}
 									placeholder="Type your email message here..."
 									disabled={isSending}
-									className="w-full h-40 px-4 py-3 bg-[#313338] border border-[#404249] rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-[#5865f2] focus:ring-2 focus:ring-[#5865f2]/20 disabled:opacity-50 resize-none transition-all duration-200"
+									className="h-32"
 								/>
-								<div className="absolute bottom-3 right-3 text-xs text-gray-500">
+								<span className="absolute bottom-3 right-3 text-[10px] text-[#6d6f78]">
 									{message.length}/10000
-								</div>
+								</span>
 							</div>
 
-							<div className="grid grid-cols-2 gap-4">
-								<div>
-									<label className="block text-gray-300 text-sm font-medium mb-2">
-										Delay between emails (ms)
-									</label>
-									<input
+							{templateService && (
+								<EmailTemplateControls
+									templateService={templateService}
+									setSubject={setSubject}
+									setMessage={setMessage}
+								/>
+							)}
+
+							<div className="flex items-center gap-4">
+								<div className="flex-1">
+									<p className="text-[10px] text-[#949ba4] uppercase tracking-wider mb-1">Delay (ms)</p>
+									<DiscordInput
 										type="number"
 										value={delay}
 										onChange={(e) => setDelay(e.target.value)}
 										min="1000"
 										disabled={isSending}
-										className="w-full px-4 py-3 bg-[#313338] border border-[#404249] rounded-lg text-white focus:outline-none focus:border-[#5865f2] focus:ring-2 focus:ring-[#5865f2]/20 disabled:opacity-50 transition-all duration-200"
 									/>
 								</div>
-								<div className="flex items-end">
-									<button
+								<div className="flex-1 self-end">
+									<DiscordButton
+										variant="red"
 										onClick={sendGmailBulk}
-										disabled={
-											isSending ||
-											!isGmailAuthenticated ||
-											emailList.split("\n").filter((email) => email.trim())
-												.length === 0 ||
-											!subject.trim() ||
-											!message.trim()
-										}
-										className="w-full px-6 py-3 bg-gradient-to-r from-[#ea4335] to-[#d23125] hover:from-[#d23125] hover:to-[#c2312f] disabled:from-gray-600 disabled:to-gray-700 text-white font-bold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:cursor-not-allowed flex items-center justify-center gap-2"
+										disabled={isSending || !isGmailAuthenticated || recipientCount === 0 || !subject.trim() || !message.trim()}
+										className="w-full justify-center py-2.5"
 									>
 										{isSending ? (
 											<>
-												<div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+												<div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
 												<span>Sending...</span>
 											</>
 										) : (
@@ -249,83 +253,163 @@ email3@example.com"
 												<span>Send Bulk Email</span>
 											</>
 										)}
-									</button>
+									</DiscordButton>
 								</div>
 							</div>
-						</div>
-					</div>
-				</div>
-
-				{/* Right Column - Activity Log */}
-				<div className="space-y-6">
-					<div className="bg-[#2b2d31] rounded-xl p-6 border border-[#404249] shadow-xl h-[600px] flex flex-col">
-						<div className="flex items-center gap-3 mb-6">
-							<div className="w-10 h-10 bg-[#faa61a] rounded-lg flex items-center justify-center">
-								<div className="w-5 h-5 bg-white rounded-full flex items-center justify-center">
-									<div className="w-2 h-2 bg-[#faa61a] rounded-full"></div>
-								</div>
-							</div>
-							<div>
-								<h3 className="text-lg font-semibold text-white">
-									Activity Log
-								</h3>
-								<p className="text-sm text-gray-400">Real-time email status</p>
-							</div>
-						</div>
-
-						<div className="flex-1 bg-[#313338] rounded-lg border border-[#404249] overflow-hidden">
-							{results.length === 0 ? (
-								<div className="h-full flex flex-col items-center justify-center text-gray-500">
-									<div className="w-16 h-16 bg-[#404249] rounded-full flex items-center justify-center mb-4">
-										<div className="w-8 h-8 border-2 border-gray-500 border-dashed rounded-full"></div>
-									</div>
-									<p className="font-medium">No activity yet</p>
-									<p className="text-sm">Email results will appear here</p>
-								</div>
-							) : (
-								<div className="h-full overflow-y-auto p-4">
-									<div className="space-y-3">
-										{/* Display email results */}
-										{results.map((result, index) => (
-											<div
-												key={`result-${index}`}
-												className="flex items-start gap-3 p-3 rounded-lg bg-[#2b2d31] border border-[#404249]"
-											>
-												<div
-													className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
-														result.status === "sent"
-															? "bg-green-400"
-															: result.status === "failed"
-															? "bg-red-400"
-															: "bg-gray-400"
-													}`}
-												></div>
-												<div className="flex-1 min-w-0">
-													<div className="text-xs text-gray-400 mb-1">
-														{new Date().toLocaleTimeString()}
-													</div>
-													<div
-														className={`text-sm ${
-															result.status === "sent"
-																? "text-green-400"
-																: result.status === "failed"
-																? "text-red-400"
-																: "text-gray-300"
-														}`}
-													>
-														{result.email} - {result.status}
-														{result.error && ` (${result.error})`}
-													</div>
-												</div>
-											</div>
-										))}
-									</div>
-								</div>
-							)}
 						</div>
 					</div>
 				</div>
 			</div>
+
+			{/* Activity Section */}
+			<div id="section-activity" className="scroll-mt-12">
+				<SectionHeader title="Activity Log" />
+				<div className="px-4 pb-8">
+					<div className="bg-[#2b2d31] rounded-[4px] border border-[#3f4149] min-h-[200px]">
+						{results.length === 0 ? (
+							<div className="flex flex-col items-center justify-center py-16 text-[#949ba4]">
+								<div className="w-10 h-10 bg-[#2b2d31] rounded-full border border-[#3f4149] flex items-center justify-center mb-3">
+									<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="text-[#6d6f78]">
+										<path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
+									</svg>
+								</div>
+								<p className="text-xs font-medium">No activity yet</p>
+								<p className="text-[10px] text-[#6d6f78] mt-0.5">Email results will appear here</p>
+							</div>
+						) : (
+							<div className="py-2">
+								{results.map((result, i) => (
+									<DiscordMessage
+										key={i}
+										avatar="G"
+										username="Gmail"
+										color="#ea4335"
+										timestamp={formatTime()}
+										content={`${result.email} - ${result.status}${result.error ? ` (${result.error})` : ""}`}
+										type={result.status === "sent" ? "success" : "error"}
+									/>
+								))}
+							</div>
+						)}
+					</div>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+function EmailTemplateControls({ templateService: ts, setSubject, setMessage }) {
+	const [showSave, setShowSave] = useState(false);
+	const [templateName, setTemplateName] = useState("");
+	const [templates, setTemplates] = useState([]);
+	const [showList, setShowList] = useState(false);
+	const [loading, setLoading] = useState(false);
+
+	const handleSave = async () => {
+		if (!templateName.trim()) return;
+		await ts.save(templateName.trim());
+		setTemplateName("");
+		setShowSave(false);
+	};
+
+	const handleList = async () => {
+		setLoading(true);
+		const list = await ts.list();
+		setTemplates(list);
+		setShowList(!showList);
+		setLoading(false);
+	};
+
+	const handleLoad = async (name) => {
+		const list = await ts.list();
+		const tpl = list.find((t) => t.name === name);
+		if (tpl?.subject) setSubject(tpl.subject);
+		if (tpl?.message) setMessage(tpl.message);
+		setShowList(false);
+	};
+
+	const handleDelete = async (name) => {
+		await ts.del(name);
+		setTemplates((prev) => prev.filter((t) => t.name !== name));
+	};
+
+	return (
+		<div className="bg-[#1e1f22] rounded-[4px] p-3 mb-3">
+			<div className="flex items-center justify-between mb-2">
+				<p className="text-[10px] text-[#949ba4] uppercase tracking-wider font-semibold">
+					Templates
+				</p>
+				<div className="flex items-center gap-1">
+					<button
+						type="button"
+						onClick={() => setShowSave(!showSave)}
+						className="px-2 py-1 text-[10px] text-[#949ba4] hover:text-[#dbdee1] hover:bg-[#393c41] rounded-[4px] transition-colors"
+					>
+						Save
+					</button>
+					<button
+						type="button"
+						onClick={handleList}
+						disabled={loading}
+						className="px-2 py-1 text-[10px] text-[#949ba4] hover:text-[#dbdee1] hover:bg-[#393c41] rounded-[4px] transition-colors"
+					>
+						{loading ? "Loading..." : "Load"}
+					</button>
+				</div>
+			</div>
+
+			{showSave && (
+				<div className="flex items-center gap-2">
+					<input
+						type="text"
+						value={templateName}
+						onChange={(e) => setTemplateName(e.target.value)}
+						placeholder="Template name"
+						className="flex-1 px-2 py-1.5 bg-[#383a40] text-[#dbdee1] placeholder-[#6d6f78] rounded-[4px] text-xs border-none focus:ring-1 focus:ring-[#5865f2]/30 transition-shadow"
+						onKeyDown={(e) => e.key === "Enter" && handleSave()}
+					/>
+					<button
+						type="button"
+						onClick={handleSave}
+						disabled={!templateName.trim()}
+						className="px-3 py-1.5 bg-[#5865f2] hover:bg-[#4752c4] text-white text-xs rounded-[4px] transition-colors disabled:opacity-50"
+					>
+						Save
+					</button>
+				</div>
+			)}
+
+			{showList && templates.length === 0 && (
+				<p className="text-xs text-[#6d6f78] py-2 text-center">No saved templates</p>
+			)}
+
+			{showList && templates.length > 0 && (
+				<div className="space-y-1 max-h-32 overflow-y-auto">
+					{templates.map((tpl) => (
+						<div key={tpl.name} className="flex items-center gap-2 py-1.5 px-2 bg-[#2b2d31] rounded-[4px] group">
+							<button
+								type="button"
+								onClick={() => handleLoad(tpl.name)}
+								className="flex-1 text-left text-xs text-[#dbdee1] truncate hover:text-[#5865f2] transition-colors"
+							>
+								{tpl.name}
+							</button>
+							<span className="text-[10px] text-[#6d6f78]">
+								{new Date(tpl.updatedAt).toLocaleDateString()}
+							</span>
+							<button
+								type="button"
+								onClick={() => handleDelete(tpl.name)}
+								className="opacity-0 group-hover:opacity-100 text-[#949ba4] hover:text-[#f23f43] transition-all"
+							>
+								<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+									<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+								</svg>
+							</button>
+						</div>
+					))}
+				</div>
+			)}
 		</div>
 	);
 }
